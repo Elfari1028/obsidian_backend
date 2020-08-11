@@ -11,10 +11,9 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
-
+from django.urls import reverse
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
@@ -25,8 +24,7 @@ SECRET_KEY = 'i5-1_gmxrg53_r13qwst-d)^&0$+8g3d5+**o2!crm%nb%)#f0'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 
@@ -39,10 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'dwebsocket',
     # 添加账户类表
-    'account.apps.AccountConfig'
+    'account.apps.AccountConfig',
+
+    'ckeditor',
+    'ckeditor_uploader',
 ]
-
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -52,10 +51,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'dwebsocket.middleware.WebSocketMiddleware',
+
+    # 'dwebsocket.middleware.WebSocketMiddleware',
 ]
 
-WEBSOCKET_ACCEPT_ALL=True
+WEBSOCKET_ACCEPT_ALL = True
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -77,7 +77,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
@@ -89,6 +88,14 @@ DATABASES = {
         'PASSWORD': 'cabinmysql2020',
         'HOST': '39.97.104.62',
         'PORT': '3306',
+
+        # for local debug
+        # 'NAME': 'mydb',
+        # 'USER': 'root',
+        # 'PASSWORD': '123123',
+        # 'HOST': '127.0.0.1',
+        # 'PORT': '3306',
+
     },
     'OPTIONS': {
         'charset': 'utf8mb4',
@@ -98,7 +105,6 @@ DATABASES = {
                         "SET CHARACTER SET utf8mb4;"
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -118,7 +124,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
@@ -132,10 +137,15 @@ USE_L10N = True
 
 USE_TZ = False
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = "account.MyUser"
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'upload')
+
+MEDIA_URL = '/media/'
+
+CKEDITOR_UPLOAD_PATH = 'content/file/'

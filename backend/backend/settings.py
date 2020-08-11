@@ -37,9 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'dwebsocket',
     # 添加账户类表
     'account.apps.AccountConfig'
 ]
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -49,7 +52,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'dwebsocket.middleware.WebSocketMiddleware',
 ]
+
+WEBSOCKET_ACCEPT_ALL=True
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -77,8 +83,19 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'obsidian',
+        'USER': 'obsidian',
+        'PASSWORD': 'cabinmysql2020',
+        'HOST': '39.97.104.62',
+        'PORT': '3306',
+    },
+    'OPTIONS': {
+        'charset': 'utf8mb4',
+        'init_command': 'SET character_set_connection=utf8mb4;'
+                        'SET collation_connection=utf8mb4_unicode_ci;'
+                        "SET NAMES 'utf8mb4';"
+                        "SET CHARACTER SET utf8mb4;"
     }
 }
 

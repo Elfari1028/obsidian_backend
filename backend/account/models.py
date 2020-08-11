@@ -84,19 +84,19 @@ class File(models.Model):
     f_dtime = models.DateTimeField(null=True)
 
     # 可查看
-    read = models.IntegerField(default=1)
+    is_read = models.IntegerField(default=1)
 
     # 可编辑
-    edit = models.IntegerField(default=1)
+    is_editor = models.IntegerField(default=1)
 
     # 可删除
-    delete = models.IntegerField(default=1)
+    is_delete = models.IntegerField(default=1)
 
     # 可评论
-    comment = models.IntegerField(default=1)
+    is_comment = models.IntegerField(default=1)
 
     # 可分享
-    share = models.IntegerField(default=1)
+    is_share = models.IntegerField(default=1)
 
 
 class Favorites(models.Model):

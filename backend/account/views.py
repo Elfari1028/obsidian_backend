@@ -25,11 +25,12 @@ def register1(request):
     if not mail_check(email):
         return JsonResponse({"message": "invalid email address", "status": 2})
     try:
-        user = MyUser.objects.create_user(userName, email, password)
+        dic = {'u_tel': data['u_tel'], 'u_intro': data['u_intro'], 'u_sex': data['u_sex'], 'u_age': data['u_age']}
+        user = MyUser.objects.create_user(userName, email, password, **dic)
         user.save()
         return JsonResponse({"message": "register success", "status": 0})
-    except IntegrityError:
-        return JsonResponse({"message": "the username has been used", "status": 1})
+    except IntegrityError as e:
+        return JsonResponse({"message": e.__str__(), "status": 1})
 
 
 def login1(request):
@@ -47,6 +48,9 @@ def login1(request):
         login(request, user)
         # request.session['userType'] = 'user'
         return JsonResponse({"message": "login success", "status": 0})
+    # print(password)
+    user = MyUser.objects.get(username__exact=userName)
+    # print(user.password)
     return JsonResponse({"message": "username or password error", "status": 1})
 
 

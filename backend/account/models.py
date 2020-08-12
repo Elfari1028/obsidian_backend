@@ -117,6 +117,9 @@ class Comment(models.Model):
     # 评论ID
     c_id = models.AutoField(primary_key=True)
 
+    # 所属文件ID
+    f_id = models.ForeignKey(File, on_delete=models.DO_NOTHING, default=None)
+    
     # 用户ID
     u_id = models.ForeignKey(MyUser, on_delete=models.CASCADE)
 

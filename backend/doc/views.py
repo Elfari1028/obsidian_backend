@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from django.db.utils import IntegrityError
 import simplejson
 from django.db.models import Q
+from django.views.decorators.http import (require_GET, require_POST)
+from django.contrib.auth.decorators import login_required
 
 
 sys.path.append("../")
@@ -152,3 +154,99 @@ def find_permission_in_one_group(request):
         return JsonResponse({"Auth": "", "success": False, "exc": "file not exist"})
     except MyUser.DoesNotExist:
         return JsonResponse({"Auth": "", "success": False, "exc": "user not exist"})
+
+
+
+@require_POST
+@login_required(login_url="/accounts/login1")
+def edit_private_doc_permission(request):
+    '''
+    by lighten:  
+    编辑其他人对个人文档的权限。
+    '''
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": "false", "exc": "please login or register"})
+    
+    file_id = request.POST.get('doc_id')
+    is_read = request.POST.get('read')
+    is_write = request.POST.get('write')
+    is_comment = request.POST.get('comment')
+    
+    file = File.objects.get(f_id=file_id)
+    if file.u_id != request.user.id:
+        return JsonResponse({"success": "false", "exc": "the file does not belong to current user"})
+    else:
+        # 读
+        file.is_read = 3 if is_read == 'true' else 1
+
+        # 写
+        file.is_write = 3 if is_write == 'true' else 1
+
+        # 评论
+        file.is_comment = 3 if is_comment == 'true' else 1
+
+        # 分享
+        '''
+        file.is_share = 3 if is_share == 'true' else 1
+        '''
+
+        file.save()
+        return JsonResponse({"success": "true", "exc": ""})
+
+
+@require_POST
+@login_required(login_url="/accounts/login1")
+def get_doc_edit_history(request):
+    '''
+    by lighten:  
+    通信方式：POST (Json)  
+    发送包：
+        - doc_id: 正整形， 表示文档id
+    返回包:
+        - success: 布尔值 true/false
+        - exc: 字符串，错误信息
+        - history: 数组，元素为记录，格式如下：
+        [{
+        time: 字符串，编辑时间
+        username: 字符串，用户名
+        avatar: 字符串，头像链接
+        }, {} , {} ]
+    '''
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": "false", "exc": "please login or register", 'history':''})
+    else:
+        file_id = request.POST.get('doc_id')
+        file = File.objects.get(f_id=file_id)
+
+        
+        file_t_id = file.t_id
+
+        # 显然只有拥有读权限的用户可以查看编辑历史
+        def get_res_lists():
+            edit_history_lists = EditHistory.objects.filter(f_id = file.id).order_by('-edit_time')
+            res = []
+            for edit_history in edit_history_lists:
+                temp = {'username': edit_history.u_id.username, 'user_id':  edit_history.u_id.id, 'avatar': edit_history.u_id.avatar.url, 'time': edit_history.edit_time}
+                res.append(temp)
+            return res
+
+        # 任何人都可以读
+        if (file.is_read == 3):
+            history = get_res_lists()
+            return JsonResponse({"success": "true", "exc": "", 'history':history})
+        # 团队可读
+        elif (file.is_read == 2):
+            if get_identity(request.user, file) == 2:
+                history = get_res_lists()
+                return JsonResponse({"success": "true", "exc": "", 'history':history})
+            else:
+                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history':''}) 
+        # 自己可读
+        elif (file.is_read == 1):
+            if get_identity(request.user, file) == 1:
+                history = get_res_lists()
+                return JsonResponse({"success": "true", "exc": "", 'history':history})
+            else:
+                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history':''})
+        else:
+            return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history':''})

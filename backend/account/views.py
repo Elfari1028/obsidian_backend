@@ -1,18 +1,12 @@
 from django.db.models import Q
 from django.db import models
-from django.shortcuts import render
 from django.http import JsonResponse
 from .models import MyUser, Team
 from django.db.utils import IntegrityError
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 import simplejson
-import json
-
 import re
 from django.contrib.auth.backends import ModelBackend
-
-
-# Create your views here.
 
 
 class CustomBackend(ModelBackend):
@@ -36,18 +30,18 @@ def email_used(request):
     data = simplejson.loads(request.body)
     try:
         result = MyUser.objects.get(email__exact=data['email'])
-        return JsonResponse({"success": 1, "exc": "this email address has been used"})
+        return JsonResponse({"success": True, "exc": "this email address has been used"})
     except MyUser.DoesNotExist:
-        return JsonResponse({"success": 0, "exc": "not used"})
+        return JsonResponse({"success": False, "exc": ""})
 
 
 def username_used(request):
     data = simplejson.loads(request.body)
     try:
         result = MyUser.objects.get(username__exact=data['username'])
-        return JsonResponse({"success": 1, "exc": "this username has been used"})
+        return JsonResponse({"success": True, "exc": "this username has been used"})
     except MyUser.DoesNotExist:
-        return JsonResponse({"success": 0, "exc": "not used"})
+        return JsonResponse({"success": False, "exc": ""})
 
 
 def register1(request):
@@ -73,7 +67,7 @@ def login1(request):
 
     if request.user.is_authenticated:
         # 方法1 如果登录了则要求注销后再登录
-        return JsonResponse({"success": 0, "exc": "you have logged in, please logout to change account"})
+        return JsonResponse({"success": False, "exc": "you have logged in, please logout to change account"})
         # 方法2 自动注销上一次登录，然后进行本次登录
         # logout(request)
     authentication = CustomBackend()
@@ -82,8 +76,8 @@ def login1(request):
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         login(request, user)
         request.session['is_login'] = 'is_login'
-        return JsonResponse({"success": 1, "exc": "login success"})
-    return JsonResponse({"success": 0, "exc": "username or password error"})
+        return JsonResponse({"success": True, "exc": ""})
+    return JsonResponse({"success": False, "exc": "username or password error"})
 
 
 def logout1(request):
@@ -93,47 +87,47 @@ def logout1(request):
 
 def my_status(request):
     if request.user.is_authenticated:
-        return JsonResponse({"success": "you have logged in", "username": request.user.username, "id": request.user.id,
-                             "exc": 0})
+        return JsonResponse({"User_id": request.user.id, "success": True, "exc": ""})
     else:
-        return JsonResponse({"success": "please login or register", "exc": 1})
+        # 暂定没登录时返回-1
+        return JsonResponse({"User_id": -1, "success": False, "exc": "please login or register"})
 
 
 def modify_username(request):
     data = simplejson.loads(request.body)
-    newName = data['newName']
+    newName = data['new_name']
     # 后续设置成保证已经登录 @login_required
     currentUser = MyUser.objects.get(username__exact=request.user.username)
     try:
         check = MyUser.objects.get(username__exact=newName)
         if currentUser.username != check.username:
-            return JsonResponse({"success": "the username has been used", "exc": 1})
+            return JsonResponse({"success": False, "exc": "the username has been used"})
         else:
             currentUser.username = newName
             currentUser.save()
-            return JsonResponse({"success": "modify username success", "exc": 0})
+            return JsonResponse({"success": True, "exc": ""})
     except MyUser.DoesNotExist:
         currentUser.username = newName
         currentUser.save()
-        return JsonResponse({"success": "modify username success", "exc": 0})
+        return JsonResponse({"success": True, "exc": ""})
 
 
 def modify_password(request):
     data = simplejson.loads(request.body)
-    old_pwd = data['oldPassword']
+    old_pwd = data['old_password']
     user = request.user
     if user.check_password(old_pwd):
-        new_pwd1 = data['newPassword1']
-        new_pwd2 = data['newPassword2']
+        new_pwd1 = data['new_password1']
+        new_pwd2 = data['new_password2']
         if new_pwd1 == "" or new_pwd2 == "":
-            return JsonResponse({"success": "password should not be empty", "exc": 1})
+            return JsonResponse({"success": False, "exc": "password should not be empty"})
         if new_pwd1 != new_pwd2:
-            return JsonResponse({"success": "should be the same", "exc": 2})
+            return JsonResponse({"success": False, "exc": "should be the same"})
         user.set_password(new_pwd1)
         user.save()
         update_session_auth_hash(request, user)
-        return JsonResponse({"success": "modify password success", "exc": 0})
-    return JsonResponse({"success": "old password error", "exc": 3})
+        return JsonResponse({"success": True, "exc": ""})
+    return JsonResponse({"success": False, "exc": "old password error"})
 
 
 def create_team(request):

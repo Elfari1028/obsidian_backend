@@ -21,5 +21,6 @@ urlpatterns = [
     path('account/', include('account.urls')),
     path('ckeditor/', include('ckeditor_uploader.urls')),
     path('doc/', include('doc.urls')),
-    path('teamwork/',include('teamwork.urls'))
+    path('teamwork/', include('teamwork.urls'))
+    path('comment/', include('comment.urls'))
 ]

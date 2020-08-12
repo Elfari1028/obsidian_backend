@@ -149,3 +149,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media/upload/')
 MEDIA_URL = '/media/'
 
 CKEDITOR_UPLOAD_PATH = 'content/file/'
+
+
+AUTHENTICATION_BACKENDS = (  # 实现使用邮箱登录
+    'django.contrib.auth.backends.ModelBackend',
+    'account.views.CustomBackend',
+)

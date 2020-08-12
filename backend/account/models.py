@@ -18,7 +18,7 @@ class MyUser(AbstractUser):
     u_intro = models.CharField(max_length=256, null=True)
 
     # 用户性别
-    u_sex = models.BooleanField(blank=True)
+    u_sex = models.BooleanField(null=True, blank=True)
 
     REQUIRED_FIELDS = ['email', 'u_sex']
 

@@ -1,13 +1,16 @@
 from django.db.models import Q
+from django.db import models
 from django.shortcuts import render
 from django.http import JsonResponse
-from .models import MyUser
+from .models import MyUser, Team
 from django.db.utils import IntegrityError
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 import simplejson
 import json
+
 import re
 from django.contrib.auth.backends import ModelBackend
+
 
 # Create your views here.
 
@@ -78,6 +81,7 @@ def login1(request):
     if user is not None:
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         login(request, user)
+        request.session['is_login'] = 'is_login'
         return JsonResponse({"success": 1, "exc": "login success"})
     return JsonResponse({"success": 0, "exc": "username or password error"})
 
@@ -130,3 +134,21 @@ def modify_password(request):
         update_session_auth_hash(request, user)
         return JsonResponse({"success": "modify password success", "exc": 0})
     return JsonResponse({"success": "old password error", "exc": 3})
+
+
+def create_team(request):
+    data = simplejson.loads(request.body)
+    try:
+        myuser = MyUser.objects.get(id=data['User_id'])
+        if 'is_login' in request.session:
+            try:
+                team = Team.objects.get(t_name=data['Team_name'])
+                return JsonResponse({'success': False, 'exc': 'the team name has been used.'})
+            except Team.DoesNotExist:
+                record = Team.objects.create(t_name=data['Team_name'], create_user=myuser)
+                return JsonResponse({'Team_id': record.t_id, 'success': True, 'exc': ''})
+        else:
+            return JsonResponse({'success': False, 'exc': 'user should login first.'})
+    except MyUser.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': 'user does not exist.'})
+

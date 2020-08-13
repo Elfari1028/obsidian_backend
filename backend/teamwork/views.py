@@ -23,6 +23,39 @@ def isleader(request):
         return False
 
 
+def get_team_name(request):
+    # POST(json)
+    # 发送：
+    # -Team_id：整型，表示团队id
+    #
+    # 接收：
+    # -Team_name： 字符串，表示团队名称
+    # -success：布尔值，表示是否成功
+    # -exc：字符串，表示错误信息，成功则为空
+    data = simplejson.loads(request.body)
+    try:
+        team = Team.objects.get(t_id=data['Team_id'])
+        return JsonResponse({'Team_name': team.t_name, 'success': True, 'exc': ''})
+    except Team.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': ''})
+
+
+def get_identity(request):
+    # POST(json)
+    # 发送：
+    # -Team_id：整型，表示查询的团队id
+    # -User_id：整型，查询身份的队员id
+    #
+    # 接收：
+    # -User_status：整型，0
+    # 团队创建者，1
+    # 普通队员，2
+    # 不属于团队
+    # -success：布尔值，表示是否成功
+    # -exc：字符串，表示错误信息，成功则为空
+    data = simplejson.loads(request.body)
+
+
 def invite_members(request):
     data = simplejson.loads(request.body)
     if request.user.is_authenticated:
@@ -81,4 +114,3 @@ def deal_with_application(request):
         # 拒绝就删除申请
         record.delete()
         return JsonResponse({'success': False, 'exc': 'application is declined.'})
-

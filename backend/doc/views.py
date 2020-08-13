@@ -104,9 +104,6 @@ def open_one_doc(request):
 def list_all_my_docs(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "please login or register", "listnum": -1, "list": []})
-    data = simplejson.loads(request.body)
-    if request.user.username != data['username']:
-        return JsonResponse({"success": False, "exc": "username error", "listnum": -1, "list": []})
     result = File.objects.filter(u_id__username__exact=request.user.username)
     returnList = []
     for doc in result:

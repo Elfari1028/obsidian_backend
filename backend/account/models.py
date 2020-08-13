@@ -146,7 +146,7 @@ class TeamMember(models.Model):
     # 发出邀请的人的ID，如果是发申请的话由于申请者是自己，填在u_id即可，这里不填
     inviter = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name="inviter", null=True)
 
-    # 加入时间（创建时生成）
+    # 加入时间（保存时生成）
     join_time = models.DateTimeField(auto_now=True)
 
     # 状态

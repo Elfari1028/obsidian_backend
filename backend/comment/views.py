@@ -3,6 +3,7 @@ from django.views.decorators.http import (require_GET,
                                           require_POST)
 from django.http import HttpResponse, JsonResponse
 from account.models import Comment, MyUser
+from django.contrib.auth.decorators import login_required
 # Create your views here.
 
 @require_POST
@@ -60,8 +61,8 @@ def get_comments(request):
         res.append(temp)
 
     return JsonResponse({
-        'success': 'true'
-        'exc': ''
+        'success': 'true',
+        'exc': '',
         'comments': res
     })
 

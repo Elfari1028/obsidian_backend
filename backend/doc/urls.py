@@ -9,11 +9,11 @@ from . import views
 
 urlpatterns = [
     path('create_doc/', views.create_doc),
-    path('delete_doc/', views.delete_doc),
+    path('put_into_recycle_bin/', views.put_into_recycle_bin),
     path('open_one_doc/', views.open_one_doc),
     path('list_all_my_docs/', views.list_all_my_docs),
     path('find_permission_in_one_group/', views.find_permission_in_one_group),
     path('person/permission/edit/', views.edit_private_doc_permission),
     path('history/get/', views.get_doc_edit_history),
-
+    path('upload_image/', views.upload_image),
 ]

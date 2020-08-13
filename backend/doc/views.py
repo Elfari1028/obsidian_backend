@@ -7,9 +7,8 @@ from django.db.models import Q
 from django.views.decorators.http import (require_GET, require_POST)
 from django.contrib.auth.decorators import login_required
 
-
 sys.path.append("../")
-from account.models import MyUser, File, Team, Template, TeamMember
+from account.models import MyUser, File, Team, Template, TeamMember, DocImage
 
 
 def set_permission(new_doc, auth_str, rank):
@@ -35,13 +34,13 @@ def get_identity(person, doc):
     team = doc.t_id
     if team is None:  # 如果数据库中为null则这里返回的是None
         return 3  # 没有团队，属于其他人
-    if team.creater_user.id == person.id:  # 队长
+    if team.create_user.id == person.id:  # 队长
         return 1
-    try:
-        result = TeamMember.objects.get(Q(t_id__t_id__exact=team.t_id) & Q(u_id__id__exact=person.id))
+    result = TeamMember.objects.filter(Q(t_id__t_id__exact=team.t_id) & Q(u_id__id__exact=person.id)
+                                       & Q(status__exact=2))
+    if result.exists():
         return 2  # 找到了这个人，说明是队员
-    except TeamMember.DoesNotExist:
-        return 3  # 没找到，说明属于其他人
+    return 3  # 没找到，说明属于其他人
 
 
 # 生成权限字符串auth
@@ -74,7 +73,7 @@ def create_doc(request):
             return JsonResponse({"success": False, "exc": "template id not exist", "file": -1})  # 存疑，创建失败返回什么
     if data['team'] != -1:
         try:
-            newDoc.t_id = Team.objects.get(t_id__exact=data['t_id'])
+            newDoc.t_id = Team.objects.get(t_id__exact=data['team'])
             teamAuth = data['teamAuth']
             set_permission(newDoc, teamAuth, 2)  # rank = 2 设置普通团队成员权限
         except Team.DoesNotExist:
@@ -83,6 +82,20 @@ def create_doc(request):
     set_permission(newDoc, visitorAuth, 3)  # rank = 3 设置其他人权限
     newDoc.save()
     return JsonResponse({"success": True, "exc": "", "file": newDoc.f_id})
+
+
+def upload_image(request):
+    doc_id = request.POST.get('doc_id')
+    try:
+        file = File.objects.get(f_id__exact=doc_id)
+        rank = get_identity(request.user, file)  # 获得这个人对文档的权限
+        if not rank <= file.is_editor:
+            return JsonResponse({"success": False, "exc": "not allowed to edit", "path": ""})
+        docImage = DocImage.objects.create(f_id=file, img=request.FILES['image'])
+        docImage.save()
+        return JsonResponse({"success": True, "exc": "", "path": docImage.img.url})
+    except File.DoesNotExist:
+        return JsonResponse({"success": False, "exc": "file not exist", "path": ""})
 
 
 def open_one_doc(request):
@@ -121,7 +134,7 @@ def list_all_my_docs(request):
     return JsonResponse({"success": True, "exc": "", "listnum": len(result), "list": returnList})
 
 
-def delete_doc(request):
+def put_into_recycle_bin(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "please login or register"})
     result = simplejson.loads(request.body)
@@ -130,7 +143,7 @@ def delete_doc(request):
         permission = generate_permission_str(file, get_identity(request.user, file))
         if permission.find("D") == -1:
             return JsonResponse({"success": False, "exc": "don't have the permission to delete"})
-        file.delete()
+        file.trash_status = True  # 放入回收站
         return JsonResponse({"success": True, "exc": ""})
     except File.DoesNotExist as e:
         return JsonResponse({"success": False, "exc": e.__str__()})
@@ -153,7 +166,6 @@ def find_permission_in_one_group(request):
         return JsonResponse({"Auth": "", "success": False, "exc": "user not exist"})
 
 
-
 @require_POST
 @login_required(login_url="/accounts/login1")
 def edit_private_doc_permission(request):
@@ -163,12 +175,12 @@ def edit_private_doc_permission(request):
     '''
     if not request.user.is_authenticated:
         return JsonResponse({"success": "false", "exc": "please login or register"})
-    
+
     file_id = request.POST.get('doc_id')
     is_read = request.POST.get('read')
     is_write = request.POST.get('write')
     is_comment = request.POST.get('comment')
-    
+
     file = File.objects.get(f_id=file_id)
     if file.u_id != request.user.id:
         return JsonResponse({"success": "false", "exc": "the file does not belong to current user"})
@@ -210,40 +222,40 @@ def get_doc_edit_history(request):
         }, {} , {} ]
     '''
     if not request.user.is_authenticated:
-        return JsonResponse({"success": "false", "exc": "please login or register", 'history':''})
+        return JsonResponse({"success": "false", "exc": "please login or register", 'history': ''})
     else:
         file_id = request.POST.get('doc_id')
         file = File.objects.get(f_id=file_id)
 
-        
         file_t_id = file.t_id
 
         # 显然只有拥有读权限的用户可以查看编辑历史
         def get_res_lists():
-            edit_history_lists = EditHistory.objects.filter(f_id = file.id).order_by('-edit_time')
+            edit_history_lists = EditHistory.objects.filter(f_id=file.id).order_by('-edit_time')
             res = []
             for edit_history in edit_history_lists:
-                temp = {'username': edit_history.u_id.username, 'user_id':  edit_history.u_id.id, 'avatar': edit_history.u_id.avatar.url, 'time': edit_history.edit_time}
+                temp = {'username': edit_history.u_id.username, 'user_id': edit_history.u_id.id,
+                        'avatar': edit_history.u_id.avatar.url, 'time': edit_history.edit_time}
                 res.append(temp)
             return res
 
         # 任何人都可以读
         if (file.is_read == 3):
             history = get_res_lists()
-            return JsonResponse({"success": "true", "exc": "", 'history':history})
+            return JsonResponse({"success": "true", "exc": "", 'history': history})
         # 团队可读
         elif (file.is_read == 2):
             if get_identity(request.user, file) == 2:
                 history = get_res_lists()
-                return JsonResponse({"success": "true", "exc": "", 'history':history})
+                return JsonResponse({"success": "true", "exc": "", 'history': history})
             else:
-                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history':''}) 
-        # 自己可读
+                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history': ''})
+                # 自己可读
         elif (file.is_read == 1):
             if get_identity(request.user, file) == 1:
                 history = get_res_lists()
-                return JsonResponse({"success": "true", "exc": "", 'history':history})
+                return JsonResponse({"success": "true", "exc": "", 'history': history})
             else:
-                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history':''})
+                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history': ''})
         else:
-            return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history':''})
+            return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history': ''})

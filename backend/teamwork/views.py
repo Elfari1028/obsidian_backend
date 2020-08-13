@@ -26,8 +26,10 @@ def invite_members(request):
     data = simplejson.loads(request.body)
     if request.user.is_authenticated:
         # 只有团队创建者能邀请
-        if not isleader(request):
-            return JsonResponse({'success': False, 'exc': 'you are not the leader of the team'})
+        try:
+            inviter = MyUser.objects.get(id=data['Inviter_id'])
+        except MyUser.DoesNotExist:
+            return JsonResponse({'success': False, 'exc': 'inviter id not exist'})
         try:
             myuser = MyUser.objects.get(id=data['User_id'])
             # 团队成员不能被重复邀请
@@ -37,7 +39,7 @@ def invite_members(request):
             except TeamMember.DoesNotExist:
                 try:
                     myteam = Team.objects.get(t_id=data['Team_id'])
-                    record = TeamMember.objects.create(t_id=myteam, u_id=myuser)
+                    record = TeamMember.objects.create(t_id=myteam, u_id=myuser, inviter=inviter)
                     return JsonResponse({'success': True, 'exc': ''})
                 except Team.DoesNotExist:
                     return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
@@ -54,3 +56,16 @@ def disband(request):
 
 def deal_with_application(request):
     pass
+
+
+def list_my_invitations(request):
+    data = simplejson.loads(request.body)
+    if not request.user.is_authenticated:
+        return JsonResponse({"Invitation_list": [], "success": False, "exc": "please login or register"})
+    result = TeamMember.objects.filter(Q(u_id__id__exact=data['User_id']) & Q(status__exact=1))
+    returnList = []
+    for invitation in result:
+        temp = {"Team_name": invitation.t_id.t_name, "Team_id": invitation.t_id.t_id,
+                "User_name": invitation.inviter.username}
+        returnList.append(temp)
+    return JsonResponse({"Invitation_list": returnList, "success": True, "exc": ""})

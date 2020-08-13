@@ -150,6 +150,7 @@ def create_team(request):
                 return JsonResponse({'success': False, 'exc': 'the team name has been used.'})
             except Team.DoesNotExist:
                 record = Team.objects.create(t_name=data['Team_name'], create_user=myuser)
+                teamMember = TeamMember.objects.create(t_id=record, u_id=myuser, status=2)  # 团队创建者，自动为2
                 return JsonResponse({'Team_id': record.t_id, 'success': True, 'exc': ''})
         else:
             return JsonResponse({'success': False, 'exc': 'user should login first.'})
@@ -181,11 +182,12 @@ def deal_with_invitation(request):
 
         accepted = data['Accepted']
         try:
-            record = TeamMember.objects.get(t_id=data['Team_id'], id=data['User_id'])
+            record = TeamMember.objects.get(t_id__t_id=data['Team_id'], u_id__id=data['User_id'])
         except TeamMember.DoesNotExist:
             return JsonResponse({'success': False, 'exc': 'invitation does not exist.'})
         if accepted:
             record.status = 2
+            record.save()
             return JsonResponse({'success': True, 'exc': ''})
         # 拒绝则删除邀请
         else:
@@ -224,3 +226,34 @@ def apply_to_join(request):
     except TeamMember.DoesNotExist:
         newrecord = TeamMember.objects.create(t_id=team, u_id=applicant, status=0)
         return JsonResponse({'success': True, 'exc': ''})
+
+
+def get_identity_in_team(request):
+    data = simplejson.loads(request.body)
+    try:
+        team = Team.objects.get(t_id__exact=data['Team_id'])
+        user = MyUser.objects.get(id__exact=data['User_id'])
+    except Team.DoesNotExist:
+        return JsonResponse({"User_status": -1, "success": False, "exc": "team not exist"})
+    except MyUser.DoesNotExist:
+        return JsonResponse({"User_status": -1, "success": False, "exc": "user not exist"})
+    teamMember = TeamMember.objects.filter(Q(t_id__t_id__exact=data['Team_id'])
+                                           & Q(u_id__id__exact=data['User_id']) & Q(status__exact=2)).first()
+    if teamMember is None:
+        return JsonResponse({"User_status": 2, "success": True, "exc": ""})
+    if teamMember.t_id.create_user.id == data['User_id']:
+        return JsonResponse({"User_status": 0, "success": True, "exc": ""})
+    else:
+        return JsonResponse({"User_status": 1, "success": True, "exc": ""})
+
+
+def get_my_teams(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": False, "exc": "please login or register", "list": []})
+    result = TeamMember.objects.filter(Q(u_id__id__exact=request.user.id)
+                                       & Q(status__exact=2)).order_by('t_id_id').distinct()
+    returnList = []
+    for teamMember in result:
+        temp = {"team_id": teamMember.t_id.t_id, "team_name": teamMember.t_id.t_name}
+        returnList.append(temp)
+    return JsonResponse({"success": True, "exc": "", "list": returnList})

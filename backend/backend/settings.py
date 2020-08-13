@@ -144,7 +144,7 @@ STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = "account.MyUser"
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media/upload/')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 
 MEDIA_URL = '/media/'
 

@@ -16,5 +16,7 @@ urlpatterns = [
     path('modify_username/', views.modify_username),
     path('create_team/', views.create_team),
     path('apply_to_join/', views.apply_to_join),
-    path('deal_with_invitation/', views.deal_with_invitation)
+    path('deal_with_invitation/', views.deal_with_invitation),
+    path('get_identity_in_team/', views.get_identity_in_team),
+    path('get_my_teams/', views.get_my_teams),
 ]

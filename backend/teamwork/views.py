@@ -22,6 +22,7 @@ def isleader(request):
     else:
         return False
 
+
 def invite_members(request):
     data = simplejson.loads(request.body)
     if request.user.is_authenticated:
@@ -53,4 +54,31 @@ def disband(request):
 
 
 def deal_with_application(request):
-    pass
+    # POST(json)
+    # 发送：
+    # Team_id：表示用户正申请加入的团队
+    # User_id：表示申请者
+    # Accepted: 布尔值，表示创建者是否通过申请
+    #
+    # 收到：
+    # -success：布尔值，表示是否成功
+    # -exc：字符串，表示错误信息，成功则为空
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'exc': 'you should login first.'})
+    if not isleader(request):
+        return JsonResponse({'success': False, 'exc': 'you are not the leader of the team'})
+    data = simplejson.loads(request.body)
+
+    try:
+        record = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['User_id'])
+    except TeamMember.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': 'unknown application.'})
+
+    if data['Accepted']:
+        record.status = 2
+        return JsonResponse({'success': True, 'exc': ''})
+    else:
+        # 拒绝就删除申请
+        record.delete()
+        return JsonResponse({'success': False, 'exc': 'application is declined.'})
+

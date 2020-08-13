@@ -80,14 +80,22 @@ def invite_members(request):
 
         try:
             myuser = MyUser.objects.get(id=data['User_id'])
-            # 不能被重复邀请
             try:
-                exist = TeamMember.objects.get(u_id=data['User_id'], t_id=data['Team_id'])
-                return JsonResponse({'success': False, 'exc': 'you have invited the user.'})
+                # 如果已经是成员，就不能被邀请了
+                exist = TeamMember.objects.get(u_id=data['User_id'], t_id=data['Team_id'], status=2)
+                return JsonResponse({'success': False, 'exc': 'the user is in your team.'})
             except TeamMember.DoesNotExist:
-                team = Team.objects.get(t_id=data['Team_id'])
-                record = TeamMember.objects.create(t_id=team, u_id=myuser, inviter_id=data['Inviter_id'])
-                return JsonResponse({'success': True, 'exc': ''})
+                # 没加入，就能被邀请，每次join_time字段更新
+                try:
+                    # 之前邀请过
+                    exist = TeamMember.objects.get(u_id=data['User_id'], t_id=data['Team_id'])
+                    exist.inviter.id = data['Inviter_id']
+                    return JsonResponse({'success': True, 'exc': ''})
+                except TeamMember.DoesNotExist:
+                    # 没邀请过
+                    team = Team.objects.get(t_id=data['Team_id'])
+                    record = TeamMember.objects.create(t_id=team, u_id=myuser, inviter_id=data['Inviter_id'])
+                    return JsonResponse({'success': True, 'exc': ''})
         except MyUser.DoesNotExist:
             return JsonResponse({'success': False, 'exc': 'you invite an unknown user.'})
     else:

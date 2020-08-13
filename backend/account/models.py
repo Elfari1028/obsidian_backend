@@ -147,7 +147,7 @@ class TeamMember(models.Model):
     inviter = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name="inviter", null=True)
 
     # 加入时间（创建时生成）
-    join_time = models.DateTimeField(auto_now_add=True)
+    join_time = models.DateTimeField(auto_now=True)
 
     # 状态
     status = models.IntegerField(default=1)

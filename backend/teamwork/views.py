@@ -23,6 +23,17 @@ def isleader(request):
         return False
 
 
+def remove_member(request):
+    # request中必须包含'tm_id'字段
+    data = simplejson.loads(request.body)
+    try:
+        record = TeamMember.objects.get(tm_id=data['tm_id'])
+        record.delete()
+        return JsonResponse({'success': True, 'exc': ''})
+    except TeamMember.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': 'record does not exist.'})
+
+
 def get_team_name(request):
     # POST(json)
     # 发送：
@@ -40,42 +51,43 @@ def get_team_name(request):
         return JsonResponse({'success': False, 'exc': ''})
 
 
-def get_identity(request):
+def invite_members(request):
     # POST(json)
     # 发送：
-    # -Team_id：整型，表示查询的团队id
-    # -User_id：整型，查询身份的队员id
+    # -Inviter_id：整型，表示邀请者id
+    # -User_id：整型，表示被邀请者id
+    # -Team_id：整型，表示邀请至的团队id
     #
-    # 接收：
-    # -User_status：整型，0
-    # 团队创建者，1
-    # 普通队员，2
-    # 不属于团队
+    # 收到：
     # -success：布尔值，表示是否成功
     # -exc：字符串，表示错误信息，成功则为空
     data = simplejson.loads(request.body)
-
-
-def invite_members(request):
-    data = simplejson.loads(request.body)
     if request.user.is_authenticated:
-        # 只有团队创建者能邀请
-        if not isleader(request):
-            return JsonResponse({'success': False, 'exc': 'you are not the leader of the team'})
+        # 只有在团队里的人才能发送邀请
+        try:
+            team = Team.objects.get(t_id=data['Team_id'])
+            # 是创建者可以邀请
+            if data['Inviter_id'] == team.create_user.id:
+                pass
+            else:
+                try:
+                    # 是成员可以邀请
+                    teammember = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['Inviter_id'], status=2)
+                except TeamMember.DoesNotExist:
+                    return JsonResponse({'success': False, 'exc': 'you are not in this team.'})
+        except Team.DoesNotExist:
+            return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
+
         try:
             myuser = MyUser.objects.get(id=data['User_id'])
-            # 团队成员不能被重复邀请
+            # 不能被重复邀请
             try:
                 exist = TeamMember.objects.get(u_id=data['User_id'], t_id=data['Team_id'])
-                return JsonResponse({'success': False, 'exc': 'the user exists in your team.'})
+                return JsonResponse({'success': False, 'exc': 'you have invited the user.'})
             except TeamMember.DoesNotExist:
-                try:
-                    myteam = Team.objects.get(t_id=data['Team_id'])
-                    record = TeamMember.objects.create(t_id=myteam, u_id=myuser)
-                    return JsonResponse({'success': True, 'exc': ''})
-                except Team.DoesNotExist:
-                    return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
-
+                team = Team.objects.get(t_id=data['Team_id'])
+                record = TeamMember.objects.create(t_id=team, u_id=myuser, inviter_id=data['Inviter_id'])
+                return JsonResponse({'success': True, 'exc': ''})
         except MyUser.DoesNotExist:
             return JsonResponse({'success': False, 'exc': 'you invite an unknown user.'})
     else:

@@ -150,6 +150,7 @@ def create_team(request):
                 return JsonResponse({'success': False, 'exc': 'the team name has been used.'})
             except Team.DoesNotExist:
                 record = Team.objects.create(t_name=data['Team_name'], create_user=myuser)
+                TeamMember.objects.create(t_id_id=record.t_id, u_id_id=data['User_id'], status=2)
                 return JsonResponse({'Team_id': record.t_id, 'success': True, 'exc': ''})
         else:
             return JsonResponse({'success': False, 'exc': 'user should login first.'})
@@ -181,11 +182,12 @@ def deal_with_invitation(request):
 
         accepted = data['Accepted']
         try:
-            record = TeamMember.objects.get(t_id=data['Team_id'], id=data['User_id'])
+            record = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['User_id'])
         except TeamMember.DoesNotExist:
             return JsonResponse({'success': False, 'exc': 'invitation does not exist.'})
         if accepted:
             record.status = 2
+            record.save()
             return JsonResponse({'success': True, 'exc': ''})
         # 拒绝则删除邀请
         else:
@@ -220,7 +222,21 @@ def apply_to_join(request):
 
     try:
         record = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['User_id'])
-        return JsonResponse({'success': False, 'exc': 'you have joined the team.'})
+        status = record.status
+
+        if status == 0:
+            # 已经发过申请，那就更新时间
+            record.save()
+            return JsonResponse({'success': True, 'exc': ''})
+        elif status == 1:
+            # 在申请前有人邀请了
+            return JsonResponse({'success': False, 'exc': 'you have been invited, please deal with invitation.'})
+        else:
+            # 已经加入团队了，就不能再发申请
+            return JsonResponse({'success': False, 'exc': 'you have been in the team.'})
     except TeamMember.DoesNotExist:
+        # 全新的申请
         newrecord = TeamMember.objects.create(t_id=team, u_id=applicant, status=0)
         return JsonResponse({'success': True, 'exc': ''})
+
+

@@ -323,12 +323,14 @@ def list_all_team_docs(request):
         res = []
         for file in file_list:
             temp = {
-                'file_id': file.f_id,
-                'file_title': file.f_title,
-                'delete_time': file.f_dtime
+                'doc_id': file.f_id,
+                'title': file.f_title,
+                'team_id': file.t_id.t_id,
+                'team_name': file.t_id.t_name,
+                'edit_time': file.f_etime,
             }
             res.append(temp)
-        return JsonResponse({"success": 'true', "exc": '', 'file_list': res})
+        return JsonResponse({"success": 'true', "exc": '', 'File_list': res})
     except Exception as e:
         return JsonResponse({"success": 'false', "exc": e.__str__})
 

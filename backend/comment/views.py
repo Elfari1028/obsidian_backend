@@ -1,4 +1,3 @@
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views.decorators.http import (require_GET, 
                                           require_POST)
@@ -32,7 +31,11 @@ def get_comments(request):
         create_time
         username
         avatar
-      }
+      },
+      {
+
+      },
+      ...
     }
     '''
     file_id = request.POST.get('doc_id')
@@ -69,34 +72,6 @@ def get_comments(request):
 
 @require_POST
 @login_required(login_url="/accounts/login1")
-def create_comment(request):
-    '''
-        - comment: 字符串， 表示评论….
-        - doc_id：正整型，文档id
-        - reply_to: 正整形，回复的评论id，无则为空
-        返回包：
-        - success: 布尔值 true/false
-        - exc: 字符串，错误信息
-        - post_time： 发布时间
-    '''
-    if not request.user.is_authenticated:
-        return JsonResponse({'success':'false', 'exc':'user infomation error', 'post_time':''})
-
-    u_id = request.user.id
-    content = request.POST.get('')
-    file_id = request.POST.get('doc_id')
-    reply_to = request.POST.get('reply_to',0)
-    if reply_to != 0:
-        return JsonResponse({'success':'false', 'exc':'reply type error', 'post_time':''})
-
-    # 将评论加入数据库
-    comment = Comment.objects.create(u_id = request.user, f_id = file_id, pc_id = reply_to, content = content)
-
-    return JsonResponse({'success':'true', 'exc':'', 'post_time':comment.create_time})
-
-
-@require_POST
-@login_required(login_url="/accounts/login1")
 def reply_comment(request):
     '''
         - comment: 字符串， 表示评论….
@@ -106,7 +81,6 @@ def reply_comment(request):
         - success: 布尔值 true/false
         - exc: 字符串，错误信息
         - post_time： 发布时间
-        功能设计完，后端回复url
     '''
     if not request.user.is_authenticated:
         return JsonResponse({'success':'false', 'exc':'user infomation error', 'post_time':''})
@@ -115,16 +89,23 @@ def reply_comment(request):
     content = request.POST.get('')
     file_id = request.POST.get('doc_id')
     reply_to = request.POST.get('reply_to',0)
-    if reply_to == 0:
-        return JsonResponse({'success':'false', 'exc':'reply type error', 'post_time':''})
-    parent_comment = Comment.objects.get(c_id=reply_to)
-    parent_comment_user = MyUser.objects.get(id=parent_comment.u_id)
-    content = '@'+str(parent_comment_user.username)+': '+content
-    while parent_comment.pc_id != 0:
-        parent_comment = Comment.objects.get(c_id=parent_comment.c_id)
-    reply_to = parent_comment.c_id
-    # 将评论加入数据库
-    comment = Comment.objects.create(u_id = request.user, f_id = file_id, pc_id = reply_to, content = content)
 
-    return JsonResponse({'success':'true', 'exc':'', 'post_time':comment.create_time})
+    # 回复他人的回复
+    if reply_to != 0:
+        parent_comment = Comment.objects.get(c_id=reply_to)
+        parent_comment_user = MyUser.objects.get(id=parent_comment.u_id)
+        content = '@'+str(parent_comment_user.username)+': '+content
+        while parent_comment.pc_id != 0:
+            parent_comment = Comment.objects.get(c_id=parent_comment.c_id)
+        reply_to = parent_comment.c_id
+        # 将评论加入数据库
+        comment = Comment.objects.create(u_id = request.user, f_id = file_id, pc_id = reply_to, content = content)
 
+        return JsonResponse({'success':'true', 'exc':'', 'post_time':comment.create_time})
+    
+    # 对文档的之档回复
+    else:
+        # 将评论加入数据库
+        comment = Comment.objects.create(u_id = request.user, f_id = file_id, pc_id = reply_to, content = content)
+
+        return JsonResponse({'success':'true', 'exc':'', 'post_time':comment.create_time})

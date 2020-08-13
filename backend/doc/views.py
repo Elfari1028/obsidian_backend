@@ -6,6 +6,8 @@ import simplejson
 from django.db.models import Q
 from django.views.decorators.http import (require_GET, require_POST)
 from django.contrib.auth.decorators import login_required
+from datetime import timezone
+
 
 sys.path.append("../")
 from account.models import MyUser, File, Team, Template, TeamMember, DocImage
@@ -166,6 +168,7 @@ def find_permission_in_one_group(request):
         return JsonResponse({"Auth": "", "success": False, "exc": "user not exist"})
 
 
+
 @require_POST
 @login_required(login_url="/accounts/login1")
 def edit_private_doc_permission(request):
@@ -175,12 +178,12 @@ def edit_private_doc_permission(request):
     '''
     if not request.user.is_authenticated:
         return JsonResponse({"success": "false", "exc": "please login or register"})
-
+    
     file_id = request.POST.get('doc_id')
     is_read = request.POST.get('read')
     is_write = request.POST.get('write')
     is_comment = request.POST.get('comment')
-
+    
     file = File.objects.get(f_id=file_id)
     if file.u_id != request.user.id:
         return JsonResponse({"success": "false", "exc": "the file does not belong to current user"})
@@ -222,40 +225,104 @@ def get_doc_edit_history(request):
         }, {} , {} ]
     '''
     if not request.user.is_authenticated:
-        return JsonResponse({"success": "false", "exc": "please login or register", 'history': ''})
+        return JsonResponse({"success": "false", "exc": "please login or register", 'history':''})
     else:
         file_id = request.POST.get('doc_id')
         file = File.objects.get(f_id=file_id)
 
+        
         file_t_id = file.t_id
 
         # 显然只有拥有读权限的用户可以查看编辑历史
         def get_res_lists():
-            edit_history_lists = EditHistory.objects.filter(f_id=file.id).order_by('-edit_time')
+            edit_history_lists = EditHistory.objects.filter(f_id = file.id).order_by('-edit_time')
             res = []
             for edit_history in edit_history_lists:
-                temp = {'username': edit_history.u_id.username, 'user_id': edit_history.u_id.id,
-                        'avatar': edit_history.u_id.avatar.url, 'time': edit_history.edit_time}
+                temp = {'username': edit_history.u_id.username, 'user_id':  edit_history.u_id.id, 'avatar': edit_history.u_id.avatar.url, 'time': edit_history.edit_time}
                 res.append(temp)
             return res
 
         # 任何人都可以读
         if (file.is_read == 3):
             history = get_res_lists()
-            return JsonResponse({"success": "true", "exc": "", 'history': history})
+            return JsonResponse({"success": "true", "exc": "", 'history':history})
         # 团队可读
         elif (file.is_read == 2):
             if get_identity(request.user, file) == 2:
                 history = get_res_lists()
-                return JsonResponse({"success": "true", "exc": "", 'history': history})
+                return JsonResponse({"success": "true", "exc": "", 'history':history})
             else:
-                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history': ''})
-                # 自己可读
+                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history':''}) 
+        # 自己可读
         elif (file.is_read == 1):
             if get_identity(request.user, file) == 1:
                 history = get_res_lists()
-                return JsonResponse({"success": "true", "exc": "", 'history': history})
+                return JsonResponse({"success": "true", "exc": "", 'history':history})
             else:
-                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history': ''})
+                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history':''})
         else:
-            return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history': ''})
+            return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history':''})
+
+@require_POST
+def delete_team_file(request):
+    '''
+    发送：
+    -file_id：整型，要删除的文件id
+    收到:
+    -success：布尔值，表示是否成功
+    -exc：字符串，表示错误信息，成功则为空
+    '''
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": "false", "exc": "please login or register"})
+    
+    file_id = request.POST.get('file_id')
+
+
+    try:
+        file = File.objects.get(pk=file_id)
+
+        permission_level = get_identity(request.user, file)
+        if permission_level == 1:
+            file.trash_status = True
+            file.f_dtime = timezone.now()
+            file.save()
+            return JsonResponse({"success": "true", "exc":''})
+        elif permission_level == 2 and file.is_delete>=2:
+            file.trash_status = True
+            file.f_dtime = timezone.now()
+            file.save()
+            return JsonResponse({"success": "true", "exc":''})
+        elif permission_level == 3 and file.is_delete==3:
+            file.trash_status = True
+            file.f_dtime = timezone.now()
+            file.save()
+            return JsonResponse({"success": "true", "exc":''})
+        else:
+            return JsonResponse({"success": "false", "exc": "没有删除权限。"})
+    except Exception as e:
+        return JsonResponse({"success": "false", "exc": e.__str__})
+
+@require_POST
+def list_all_team_docs(request):
+    """
+    by lighten
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": "false", "exc": "please login or register"})
+    
+    team_id = request.POST.get('Team_id')
+
+    try:
+        team_member = TeamMember.objects.get(Q(t_id__t_id__exact=team_id) & Q(u_id__id__exact=request.user.id))
+        file_list = File.objects.filter(t_id__t_id=team_id, trash_status=False)
+        res = []
+        for file in file_list:
+            temp = {
+                'file_id': file.f_id,
+                'file_title': file.f_title,
+                'delete_time': file.f_dtime
+            }
+            res.append(temp)
+        return JsonResponse({"success": 'true', "exc": '', 'file_list': res})
+    except Exception as e:
+        return JsonResponse({"success": 'false', "exc": e.__str__})

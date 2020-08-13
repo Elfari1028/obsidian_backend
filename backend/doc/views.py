@@ -6,6 +6,7 @@ import simplejson
 from django.db.models import Q
 from django.views.decorators.http import (require_GET, require_POST)
 from django.contrib.auth.decorators import login_required
+from datetime import timezone
 
 
 sys.path.append("../")
@@ -247,3 +248,67 @@ def get_doc_edit_history(request):
                 return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history':''})
         else:
             return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history':''})
+
+@require_POST
+def delete_team_file(request):
+    '''
+    发送：
+    -file_id：整型，要删除的文件id
+    收到:
+    -success：布尔值，表示是否成功
+    -exc：字符串，表示错误信息，成功则为空
+    '''
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": "false", "exc": "please login or register"})
+    
+    file_id = request.POST.get('file_id')
+
+
+    try:
+        file = File.objects.get(pk=file_id)
+
+        permission_level = get_identity(request.user, file)
+        if permission_level == 1:
+            file.trash_status = True
+            file.f_dtime = timezone.now()
+            file.save()
+            return JsonResponse({"success": "true", "exc":''})
+        elif permission_level == 2 and file.is_delete>=2:
+            file.trash_status = True
+            file.f_dtime = timezone.now()
+            file.save()
+            return JsonResponse({"success": "true", "exc":''})
+        elif permission_level == 3 and file.is_delete==3:
+            file.trash_status = True
+            file.f_dtime = timezone.now()
+            file.save()
+            return JsonResponse({"success": "true", "exc":''})
+        else:
+            return JsonResponse({"success": "false", "exc": "没有删除权限。"})
+    except Exception as e:
+        return JsonResponse({"success": "false", "exc": e.__str__})
+
+@require_POST
+def list_all_team_docs(request):
+    """
+    by lighten
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": "false", "exc": "please login or register"})
+    
+    team_id = request.POST.get('Team_id')
+
+    try:
+        team_member = TeamMember.objects.get(Q(t_id__t_id__exact=team_id) & Q(u_id__id__exact=request.user.id))
+        file_list = File.objects.filter(t_id__t_id=team_id, trash_status=False)
+        res = []
+        for file in file_list:
+            temp = {
+                'file_id': file.f_id,
+                'file_title': file.f_title,
+                'delete_time': file.f_dtime
+            }
+            res.append(temp)
+        return JsonResponse({"success": 'true', "exc": '', 'file_list': res})
+    except Exception as e:
+        return JsonResponse({"success": 'false', "exc": e.__str__})

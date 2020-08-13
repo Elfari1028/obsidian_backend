@@ -1,5 +1,2 @@
 # Default ignored files
 /workspace.xml
-__pycache__/
-*/__pycache__
-*.py[cod]

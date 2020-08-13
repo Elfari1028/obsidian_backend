@@ -86,10 +86,10 @@ def logout1(request):
 
 def my_status(request):
     if request.user.is_authenticated:
-        return JsonResponse({"User_id": request.user.id, "success": True, "exc": ""})
+        return JsonResponse({"username": request.user.username, "User_id": request.user.id, "success": True, "exc": ""})
     else:
         # 暂定没登录时返回-1
-        return JsonResponse({"User_id": -1, "success": False, "exc": "please login or register"})
+        return JsonResponse({"username": "", "User_id": -1, "success": False, "exc": "please login or register"})
 
 
 def modify_username(request):

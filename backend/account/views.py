@@ -1,7 +1,7 @@
 from django.db.models import Q
 from django.db import models
 from django.http import JsonResponse
-from .models import MyUser, Team
+from .models import MyUser, Team, TeamMember
 from django.db.utils import IntegrityError
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 import simplejson
@@ -75,7 +75,6 @@ def login1(request):
     if user is not None:
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         login(request, user)
-        request.session['is_login'] = 'is_login'
         return JsonResponse({"success": True, "exc": ""})
     return JsonResponse({"success": False, "exc": "username or password error"})
 
@@ -131,10 +130,21 @@ def modify_password(request):
 
 
 def create_team(request):
+    # POST(json)
+    # 发送：
+    # User_id：整型，团队创建者id
+    # Team_name: 字符串，团队名称
+    #
+    # 收到：
+    # Team_id：整型，所创建的团队id（创建失败则无此项）
+    # success：布尔值，表示是否成功
+    # exc：字符串，表示错误信息，成功则为空
     data = simplejson.loads(request.body)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'exc': 'you should login first.'})
     try:
         myuser = MyUser.objects.get(id=data['User_id'])
-        if 'is_login' in request.session:
+        if request.user.is_authenticated:
             try:
                 team = Team.objects.get(t_name=data['Team_name'])
                 return JsonResponse({'success': False, 'exc': 'the team name has been used.'})
@@ -146,3 +156,71 @@ def create_team(request):
     except MyUser.DoesNotExist:
         return JsonResponse({'success': False, 'exc': 'user does not exist.'})
 
+
+def deal_with_invitation(request):
+    # POST(json)
+    # 发送：
+    # -User_id：整型，表示接受邀请的用户
+    # -Team_id：整型，表示接受邀请后进入的团队
+    # -Accepted：布尔值，表示是否接受邀请
+    #
+    # 收到：
+    # -success：布尔值，表示是否成功
+    # -exc：字符串，表示错误信息，成功则为空
+    data = simplejson.loads(request.body)
+    if request.user.is_authenticated:
+        try:
+            invited_user = MyUser.objects.get(id=data['User_id'])
+        except MyUser.DoesNotExist:
+            return JsonResponse({'success': False, 'exc': 'the user does not exist.'})
+
+        try:
+            team = Team.objects.get(t_id=data['Team_id'])
+        except MyUser.DoesNotExist:
+            return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
+
+        accepted = data['Accepted']
+        try:
+            record = TeamMember.objects.get(t_id=data['Team_id'], id=data['User_id'])
+        except TeamMember.DoesNotExist:
+            return JsonResponse({'success': False, 'exc': 'invitation does not exist.'})
+        if accepted:
+            record.status = 2
+            return JsonResponse({'success': True, 'exc': ''})
+        # 拒绝则删除邀请
+        else:
+            record.delete()
+            return JsonResponse({'success': False, 'exc': 'invitation is declined.'})
+    else:
+        return JsonResponse({'success': False, 'exc': 'you should login first.'})
+
+
+def apply_to_join(request):
+    # POST(json)
+    # 发送：
+    # -Team_id：整型，表示申请加入的团队id
+    # -User_id：整型，表示申请加入的用户id
+    #
+    # 收到：
+    # -success：布尔值，表示是否成功
+    # -exc：字符串，表示错误信息，成功则为空
+    data = simplejson.loads(request.loads)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'exc': 'you should login first'})
+
+    try:
+        team = Team.objects.get(t_id=data['Team_id'])
+    except Team.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
+
+    try:
+        applicant = MyUser.objects.get(id=data['User_id'])
+    except MyUser.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': 'the user does not exist.'})
+
+    try:
+        record = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['User_id'])
+        return JsonResponse({'success': False, 'exc': 'you have joined the team.'})
+    except TeamMember.DoesNotExist:
+        newrecord = TeamMember.objects.create(t_id=team, u_id=applicant, status=0)
+        return JsonResponse({'success': True, 'exc': ''})

@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views.decorators.http import (require_GET, 
                                           require_POST)
@@ -60,8 +61,8 @@ def get_comments(request):
         res.append(temp)
 
     return JsonResponse({
-        'success': 'true'
-        'exc': ''
+        'success': 'true',
+        'exc': '',
         'comments': res
     })
 

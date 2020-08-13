@@ -14,5 +14,7 @@ urlpatterns = [
     path('my_status/', views.my_status),
     path('modify_password/', views.modify_password),
     path('modify_username/', views.modify_username),
-    path('create_team/', views.create_team)
+    path('create_team/', views.create_team),
+    path('apply_to_join/', views.apply_to_join),
+    path('deal_with_invitation/', views.deal_with_invitation)
 ]

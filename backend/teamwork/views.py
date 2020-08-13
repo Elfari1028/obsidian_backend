@@ -12,10 +12,22 @@ import json
 
 # Create your views here.
 
+def isleader(request):
+    # request中必须包含'Team_id'字段
+    userid = request.session.get('_auth_user_id')
+    data = simplejson.loads(request.body)
+    team = Team.objects.get(t_id=data['Team_id'])
+    if userid == str(team.create_user.id):
+        return True
+    else:
+        return False
+
 def invite_members(request):
     data = simplejson.loads(request.body)
-    if 'is_login' in request.session:
-
+    if request.user.is_authenticated:
+        # 只有团队创建者能邀请
+        if not isleader(request):
+            return JsonResponse({'success': False, 'exc': 'you are not the leader of the team'})
         try:
             myuser = MyUser.objects.get(id=data['User_id'])
             # 团队成员不能被重复邀请
@@ -36,35 +48,9 @@ def invite_members(request):
         return JsonResponse({'success': False, 'exc': 'user should login first.'})
 
 
-def deal_with_invitation(request):
-    data = simplejson.loads(request.body)
-    if 'is_login' in request.session:
-        try:
-            invited_user = MyUser.objects.get(id=data['User_id'])
-        except MyUser.DoesNotExist:
-            return JsonResponse({'success': False, 'exc': 'the user does not exist.'})
-
-        try:
-            team = Team.objects.get(t_id=data['Team_id'])
-        except MyUser.DoesNotExist:
-            return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
-
-        accepted = data['Accepted']
-        try:
-            record = TeamMember.objects.get(t_id=data['Team_id'], id=data['User_id'])
-        except TeamMember.DoesNotExist:
-            return JsonResponse({'success': False, 'exc': 'invitation does not exist.'})
-        if accepted:
-            record.status = 2
-            return JsonResponse({'success': True, 'exc': ''})
-        # 拒绝则删除邀请
-        else:
-            record.delete()
-            return JsonResponse({'success': False, 'exc': 'invitation is declined.'})
-    else:
-        return JsonResponse({'success': False, 'exc': 'you should login first.'})
-
-
 def disband(request):
-    data = simplejson.loads(request.body)
+    pass
 
+
+def deal_with_application(request):
+    pass

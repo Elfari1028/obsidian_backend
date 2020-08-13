@@ -188,7 +188,7 @@ class Template(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
 
     # 最后编辑时间
-    create_time = models.DateTimeField(auto_now=True)
+    edit_time = models.DateTimeField(auto_now=True)
 
     # 编辑次数
     edit_count = models.IntegerField(default=0)

@@ -13,7 +13,7 @@ def user_avatar_path(instance, filename):
     # print(ext)
     filename = '{}.{}'.format(uuid.uuid4().hex[:8], ext)
     # return the whole path to the file
-    return "{0}/{1}/{2}".format(instance.f_id.u_id.username, "avatar", filename)
+    return "{0}/{1}/{2}".format(instance.username, "avatar", filename)
 
 
 class MyUser(AbstractUser):

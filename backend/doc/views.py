@@ -10,7 +10,7 @@ from datetime import timezone
 
 
 sys.path.append("../")
-from account.models import MyUser, File, Team, Template, TeamMember, DocImage
+from account.models import MyUser, File, Team, Template, TeamMember, DocImage, BrowseRecords
 
 
 def set_permission(new_doc, auth_str, rank):
@@ -107,7 +107,12 @@ def open_one_doc(request):
         doc = File.objects.get(f_id__exact=doc_id)
         creator = doc.u_id
         permission_str = generate_permission_str(doc, get_identity(request.user, doc))
-        content = "" if doc.f_content is None or permission_str.find("R") == -1 else doc.f_content
+        content = ""
+        if permission_str.find("R") == -1:
+            content = ""
+        else:
+            content = "" if doc.f_content is None else doc.f_content
+            BrowseRecords.objects.create(u_id=request.user, f_id=doc)
         returnDict = {"success": True, "exc": "", "title": doc.f_title, "document": content, 'auth': permission_str,
                       "creator": {"id": creator.id, "name": creator.username, "avatar": creator.u_avatar.url}}
         return JsonResponse(returnDict)
@@ -326,3 +331,16 @@ def list_all_team_docs(request):
         return JsonResponse({"success": 'true', "exc": '', 'file_list': res})
     except Exception as e:
         return JsonResponse({"success": 'false', "exc": e.__str__})
+
+
+def get_recent_read(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": False, "exc": "please login or register", "list": []})
+    returnList = []
+    records = BrowseRecords.objects.filter(u_id__id__exact=request.user.id).order_by('-browse_time')
+    for record in records:
+        file = record.f_id
+        temp = {"doc_id": file.f_id, "title": file.f_title, "team_id": -1 if file.t_id is None else file.t_id.t_id,
+                "team_name": "" if file.t_id is None else file.t_id.t_name, "time": file.f_etime}
+        returnList.append(temp)
+    return JsonResponse({"success": True, "exc": "", "list": returnList})

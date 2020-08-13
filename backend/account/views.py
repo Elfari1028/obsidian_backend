@@ -92,6 +92,20 @@ def my_status(request):
         return JsonResponse({"username": "", "User_id": -1, "success": False, "exc": "please login or register"})
 
 
+def upload_avatar(request):
+    user = request.user
+    user.u_avatar = request.FILES['avatar']
+    user.save()
+    return JsonResponse({"success": True, "exc": "", "url": user.u_avatar.url})
+
+
+def get_avatar(request):
+    if request.user.is_authenticated:
+        return JsonResponse({"success": True, "exc": "", "url": request.user.u_avatar.url})
+    else:
+        return JsonResponse({"success": False, "exc": "please login or register", "url": ""})
+
+
 def modify_username(request):
     data = simplejson.loads(request.body)
     newName = data['new_name']

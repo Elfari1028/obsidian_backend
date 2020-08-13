@@ -1,3 +1,4 @@
+import uuid
 from datetime import timezone
 
 from django.db import models
@@ -211,9 +212,18 @@ class EditHistory(models.Model):
     edit_time = models.DateTimeField(auto_now_add=True)
 
 
+def user_directory_path(instance, filename):
+    # print(filename)
+    ext = filename.split('.')[-1]
+    # print(ext)
+    filename = '{}.{}'.format(uuid.uuid4().hex[:8], ext)
+    # return the whole path to the file
+    return "{0}/{1}/{2}".format(instance.user.username, "doc_images", filename)
+
+
 class DocImage(models.Model):
     img_id = models.AutoField(primary_key=True)
 
     f_id = models.ForeignKey(File, on_delete=models.CASCADE)
 
-    img_url = models.CharField(max_length=500)
+    img = models.ImageField(upload_to=user_directory_path)

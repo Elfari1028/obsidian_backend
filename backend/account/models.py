@@ -191,7 +191,13 @@ class Template(models.Model):
     tmplt_id = models.AutoField(primary_key=True)
 
     # 用户ID
-    u_id = models.ForeignKey(MyUser, on_delete=models.CASCADE)
+    u_id = models.ForeignKey(MyUser, on_delete=models.CASCADE, null=True)
+
+    # 模板标题
+    title = models.CharField(max_length=20)
+
+    # 模板介绍
+    intro = models.CharField(max_length=128, null=True)
 
     # 模板文件内容
     content = models.TextField(max_length=100000, null=True, blank=True)

@@ -348,6 +348,37 @@ def get_recent_read(request):
 
 
 def list_all_templates(request):
-    data = simplejson.loads(request.body)
+    # 方式：GET
+    # 发送包: 空
+    #
+    # 返回包：
+    # - success: 布尔值，是否成功
+    # - exc：字符串，错误信息
+    # - list: 数组，元素为模板对象[]
+    # 模板对象：{template_id: 正整数，title: 字符串，标题, intro: 字符串，简介}
     if not request.user.is_authenticated:
         return JsonResponse({'success': False, 'exc': ''})
+    tmplist = Template.objects.all()
+    recordlist = list(tmplist.values('tmplt_id', 'title', 'intro'))
+    returnlist = []
+    if tmplist is not None:
+        for record in tmplist:
+            tmplt = {'template_id': record.tmplt_id, 'title': record.title, 'intro': record.intro}
+            returnlist.append(tmplt)
+    return JsonResponse({'success': True, 'exc': '', 'list': returnlist})
+
+
+def create_templates(request):
+    # 【仅用于开发，部署预置模板用】
+    #
+    # 方式: POST(json）
+    # 发送包：
+    # -title: 字符串，标题
+    # - intro: 字符串，描述
+    # - content：字符串，内容
+    #
+    # 返回包：
+    # -success: 布尔值
+    data = simplejson.loads(request.body)
+    Template.objects.create(title=data['title'], intro=data['intro'], content=data['content'])
+    return JsonResponse({'success': True})

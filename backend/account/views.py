@@ -30,18 +30,18 @@ def email_used(request):
     data = simplejson.loads(request.body)
     try:
         result = MyUser.objects.get(email__exact=data['email'])
-        return JsonResponse({"success": True, "exc": "this email address has been used"})
+        return JsonResponse({"success": False, "exc": "this email address has been used"})
     except MyUser.DoesNotExist:
-        return JsonResponse({"success": False, "exc": ""})
+        return JsonResponse({"success": True, "exc": ""})
 
 
 def username_used(request):
     data = simplejson.loads(request.body)
     try:
         result = MyUser.objects.get(username__exact=data['username'])
-        return JsonResponse({"success": True, "exc": "this username has been used"})
+        return JsonResponse({"success": False, "exc": "this username has been used"})
     except MyUser.DoesNotExist:
-        return JsonResponse({"success": False, "exc": ""})
+        return JsonResponse({"success": True, "exc": ""})
 
 
 def register1(request):

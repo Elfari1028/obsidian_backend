@@ -10,7 +10,7 @@ from datetime import timezone
 
 
 sys.path.append("../")
-from account.models import MyUser, File, Team, Template, TeamMember
+from account.models import MyUser, File, Team, Template, TeamMember, EditHistory
 
 
 def set_permission(new_doc, auth_str, rank):

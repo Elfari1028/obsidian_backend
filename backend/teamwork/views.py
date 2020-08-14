@@ -104,7 +104,7 @@ def invite_members(request):
 
 
 def disband(request):
-    pass
+    data = simplejson.loads(request.body)
 
 
 def deal_with_application(request):

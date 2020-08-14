@@ -6,7 +6,7 @@ import simplejson
 from django.db.models import Q
 from django.views.decorators.http import (require_GET, require_POST)
 from django.contrib.auth.decorators import login_required
-from datetime import timezone, datetime
+from datetime import timezone
 
 sys.path.append("../")
 from account.models import MyUser, File, Team, Template, TeamMember, DocImage, BrowseRecords, EditHistory
@@ -81,8 +81,6 @@ def create_doc(request):
             return JsonResponse({"success": False, "exc": "team id not exist", "file": -1})
     visitorAuth = data['visitorAuth']
     set_permission(newDoc, visitorAuth, 3)  # rank = 3 设置其他人权限
-    newDoc.f_status = True  # 作者获得锁
-    newDoc.last_user = request.user
     newDoc.save()
     return JsonResponse({"success": True, "exc": "", "file": newDoc.f_id})
 
@@ -102,31 +100,18 @@ def upload_image(request):
 
 
 def open_one_doc(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({"success": False, "exc": "please login first", "title": "", "document": "", "auth": "",
-                             "creator": {"id": -1, "name": "", "avatar": ""}})
     data = simplejson.loads(request.body)
     doc_id = data['doc_id']
     try:
         doc = File.objects.get(f_id__exact=doc_id)
         creator = doc.u_id
-        if doc.f_status:  # 有锁
-            if (datetime.now() - doc.f_etime).total_seconds() <= 120:  # 锁有效
-                return JsonResponse({"success": False, "exc": "file is in use", "title": "", "document": "",
-                                     "auth": "", "creator": {"id": creator.id, "name": creator.username,
-                                                             "avatar": creator.u_avatar.url}})
-        #    doc.f_status = False  # 锁失效时让它继续失效，除非后续发现能编辑
         permission_str = generate_permission_str(doc, get_identity(request.user, doc))
+        content = ""
         if permission_str.find("R") == -1:
-            return JsonResponse({"success": False, "exc": "not permitted", "title": "", "document": "",
-                                 "auth": "", "creator": {"id": creator.id, "name": creator.username,
-                                                         "avatar": creator.u_avatar.url}})
-        BrowseRecords.objects.create(u_id=request.user, f_id=doc)  # 有读权限
-        if permission_str.find("W") != -1:
-            doc.f_status = True  # 上锁
-            doc.last_user = request.user
-            doc.save()
-        content = "" if doc.f_content is None else doc.f_content
+            content = ""
+        else:
+            content = "" if doc.f_content is None else doc.f_content
+            BrowseRecords.objects.create(u_id=request.user, f_id=doc)
         returnDict = {"success": True, "exc": "", "title": doc.f_title, "document": content, 'auth': permission_str,
                       "creator": {"id": creator.id, "name": creator.username, "avatar": creator.u_avatar.url}}
         return JsonResponse(returnDict)
@@ -354,59 +339,46 @@ def get_recent_read(request):
         return JsonResponse({"success": False, "exc": "please login or register", "list": []})
     returnList = []
     records = BrowseRecords.objects.filter(u_id__id__exact=request.user.id).order_by('-browse_time')
-    now = datetime.now()
     for record in records:
         file = record.f_id
-        if (now - file.f_etime).days > 7:  # 浏览记录只保存7天
-            record.delete()
         temp = {"doc_id": file.f_id, "title": file.f_title, "team_id": -1 if file.t_id is None else file.t_id.t_id,
                 "team_name": "" if file.t_id is None else file.t_id.t_name, "time": file.f_etime}
         returnList.append(temp)
     return JsonResponse({"success": True, "exc": "", "list": returnList})
 
 
-def auto_save_doc(request):
+def list_all_templates(request):
+    # 方式：GET
+    # 发送包: 空
+    #
+    # 返回包：
+    # - success: 布尔值，是否成功
+    # - exc：字符串，错误信息
+    # - list: 数组，元素为模板对象[]
+    # 模板对象：{template_id: 正整数，title: 字符串，标题, intro: 字符串，简介}
     if not request.user.is_authenticated:
-        return JsonResponse({"success": False, "exc": "please login or register"})
+        return JsonResponse({'success': False, 'exc': ''})
+    tmplist = Template.objects.all()
+    recordlist = list(tmplist.values('tmplt_id', 'title', 'intro'))
+    returnlist = []
+    if tmplist is not None:
+        for record in tmplist:
+            tmplt = {'template_id': record.tmplt_id, 'title': record.title, 'intro': record.intro}
+            returnlist.append(tmplt)
+    return JsonResponse({'success': True, 'exc': '', 'list': returnlist})
+
+
+def create_templates(request):
+    # 【仅用于开发，部署预置模板用】
+    #
+    # 方式: POST(json）
+    # 发送包：
+    # -title: 字符串，标题
+    # - intro: 字符串，描述
+    # - content：字符串，内容
+    #
+    # 返回包：
+    # -success: 布尔值
     data = simplejson.loads(request.body)
-    doc = File.objects.get(f_id__exact=data['doc_id'])
-    document = data['document']
-    if doc.f_status:  # 有锁
-        if doc.last_user == request.user:  # 本人拥有
-            doc.f_content = document
-            doc.save()
-            EditHistory.objects.create(u_id=request.user, f_id=doc)
-            return JsonResponse({"success": True, "exc": ""})
-        if (datetime.now() - doc.f_etime).total_seconds() <= 120:  # 非本人拥有且锁未过期
-            return JsonResponse({"success": False, "exc": "file in use"})
-    # 1.无锁且最近一次是本人写  2.锁非本人拥有且过期且最近一次是本人写
-    if doc.last_user == request.user:
-        doc.f_content = document
-        doc.f_status = True  # 模拟掉线后再次连接的情况，情况1代表着自己掉线，情况2代表他人掉线且他人没写
-        EditHistory.objects.create(u_id=request.user, f_id=doc)
-        doc.save()
-        return JsonResponse({"success": True, "exc": ""})
-    return JsonResponse({"success": False, "exc": "not permitted"})
-
-
-def close_doc(request):
-    data = simplejson.loads(request.body)
-    doc = File.objects.get(f_id__exact=data['doc_id'])
-    document = data['document']
-    if doc.f_status:
-        if doc.last_user == request.user:
-            doc.f_content = document
-            doc.f_status = False  # 释放锁
-            doc.save()
-            EditHistory.objects.create(u_id=request.user, f_id=doc)
-            return JsonResponse({"success": True, "exc": ""})
-        if (datetime.now() - doc.f_etime).total_seconds() <= 120:  # 非本人拥有且锁未过期
-            return JsonResponse({"success": False, "exc": "file in use"})
-    if doc.last_user == request.user:
-        doc.f_content = document
-        doc.f_status = False
-        doc.save()
-        EditHistory.objects.create(u_id=request.user, f_id=doc)
-        return JsonResponse({"success": True, "exc": ""})
-    return JsonResponse({"success": False, "exc": "not permitted"})
-
+    Template.objects.create(title=data['title'], intro=data['intro'], content=data['content'])
+    return JsonResponse({'success': True})

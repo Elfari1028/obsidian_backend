@@ -3,7 +3,6 @@ from datetime import timezone
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from ckeditor_uploader.fields import RichTextUploadingField
 from django.urls import reverse
 
 
@@ -69,7 +68,7 @@ class File(models.Model):
     f_title = models.CharField(max_length=20)
 
     # 文件内容（存储方式待定）
-    f_content = RichTextUploadingField(max_length=100000, null=True, blank=True)
+    f_content = models.TextField(max_length=100000, null=True, blank=True)
 
     # 创建时间（创建时生成）
     f_ctime = models.DateTimeField(auto_now_add=True)
@@ -131,7 +130,7 @@ class Comment(models.Model):
 
     # 所属文件ID
     f_id = models.ForeignKey(File, on_delete=models.DO_NOTHING, default=None)
-    
+
     # 用户ID
     u_id = models.ForeignKey(MyUser, on_delete=models.CASCADE)
 
@@ -194,10 +193,16 @@ class Template(models.Model):
     tmplt_id = models.AutoField(primary_key=True)
 
     # 用户ID
-    u_id = models.ForeignKey(MyUser, on_delete=models.CASCADE)
+    u_id = models.ForeignKey(MyUser, on_delete=models.CASCADE, null=True)
+
+    # 模板标题
+    title = models.CharField(max_length=20)
+
+    # 模板介绍
+    intro = models.CharField(max_length=128, null=True)
 
     # 模板文件内容
-    content = RichTextUploadingField(max_length=100000, null=True, blank=True)
+    content = models.TextField(max_length=100000, null=True, blank=True)
 
     # 创建时间
     create_time = models.DateTimeField(auto_now_add=True)

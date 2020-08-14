@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.db import models
 from django.shortcuts import render
 from django.http import JsonResponse
-from account.models import MyUser, Team, TeamMember
+from account.models import MyUser, Team, TeamMember, File
 from django.db.utils import IntegrityError
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 import simplejson
@@ -104,7 +104,39 @@ def invite_members(request):
 
 
 def disband(request):
-    pass
+    # POST(json)
+    # 发送：
+    # -Team_id：整型，表示要解散的团队id
+    #
+    # 收到：
+    # -success：布尔值，表示是否成功
+    # -exc：字符串，表示错误信息，成功则为空
+    data = simplejson.loads(request.body)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'exc': 'you should login first.'})
+    if not isleader(request):
+        return JsonResponse({'success': False, 'exc': 'you are not the leader.'})
+    try:
+        team = Team.objects.get(t_id=data['Team_id'])
+    except Team.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
+    # 团队下的文件外键设为null
+    # 文件权限还要调整吗
+    qs = File.objects.filter(t_id=data['Team_id'])
+    filelist = list(qs.values('f_id', 't_id'))
+    # returnlist = []
+    if filelist is not None:
+        for file in filelist:
+            tmpfile = File.objects.get(f_id=file['f_id'])
+            tmpfile.t_id = None
+            tmpfile.save()
+            # tmp = {'f_id': tmpfile.f_id, 't_id': tmpfile.t_id_id}
+            # returnlist.append(tmp)
+
+    # 删除团队record
+    team.delete()
+    # return JsonResponse({'returnlist': returnlist, 'success': True, 'exc': ''})
+    return JsonResponse({'success': True, 'exc': ''})
 
 
 def deal_with_application(request):
@@ -165,7 +197,6 @@ def members_in_team(request):
         }
         returnlist = []
         returnlist.append(info)
-        print(returnlist)
         result = TeamMember.objects.filter(Q(t_id=data['Team_id']) & Q(status=2) & ~Q(u_id=leader.id))
         tmplist = list(result.values('u_id').distinct())
 
@@ -228,3 +259,38 @@ def list_my_invitations(request):
                 "User_name": invitation.inviter.username}
         returnList.append(temp)
     return JsonResponse({"Invitation_list": returnList, "success": True, "exc": ""})
+
+
+def list_applications(request):
+    # POST(json)
+    # 发送：
+    # -Team_id：整型，表示所查询的团队的id
+    #
+    # 收到：
+    # -User_list: [{User_id, User_avatar, User_name},…]
+    # 数组，其中每个元素为
+    # {用户id，用户头像，用户名}，
+    # 例如：[{123, ‘media / UserAvatar / 123.jpg’, ’张三’},
+    # {1234, ‘media / UserAvatar / 1234.jpg’, ’李四’}, …]
+    # -success：布尔值，表示是否成功
+    # -exc：字符串，表示错误信息，成功则为空
+    data = simplejson.loads(request.body)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'exc': 'you should login first'})
+    try:
+        team = Team.objects.get(t_id=data['Team_id'])
+    except Team.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': 'the team do not exist.'})
+    qs = TeamMember.objects.filter(Q(t_id=data['Team_id']) & Q(status=0))
+    tmplist = list(qs.values('u_id'))
+    returnlist = []
+    if tmplist is not None:
+        for record in tmplist:
+            applicant = MyUser.objects.get(id=record['u_id'])
+            tmp = {
+                'User_id': applicant.id,
+                'User_avatar': applicant.u_avatar.url,
+                'User_name': applicant.username
+            }
+            returnlist.append(tmp)
+    return JsonResponse({'User_list': returnlist, 'success': True, 'exc': ''})

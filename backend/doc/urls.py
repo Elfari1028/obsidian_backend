@@ -19,5 +19,10 @@ urlpatterns = [
     path('get_history/', views.get_doc_edit_history),
     path('list_all_team_docs', views.list_all_team_docs),
     path('upload_image/', views.upload_image),
-    path('get_recent_read/', views.get_recent_read)
+    path('get_recent_read/', views.get_recent_read),
+
+
+    path('list_all_templates/',views.list_all_templates),
+    path('create_templates/',views.create_templates)
+
 ]

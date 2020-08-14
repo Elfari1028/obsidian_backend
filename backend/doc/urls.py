@@ -11,6 +11,8 @@ urlpatterns = [
     path('create_doc/', views.create_doc),
     path('put_into_recycle_bin/', views.put_into_recycle_bin),
     path('open_one_doc/', views.open_one_doc),
+    path('close_doc/', views.close_doc),
+    path('auto_save_doc/', views.auto_save_doc),
     path('list_all_my_docs/', views.list_all_my_docs),
     path('find_permission_in_one_group/', views.find_permission_in_one_group),
     path('edit_pprivate_permission/', views.edit_private_doc_permission),

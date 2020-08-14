@@ -60,7 +60,7 @@ class File(models.Model):
     f_id = models.AutoField(primary_key=True)
 
     # 用户ID
-    u_id = models.ForeignKey(MyUser, on_delete=models.CASCADE)
+    u_id = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name="u_id")
 
     # 团队ID
     t_id = models.ForeignKey(Team, null=True, on_delete=models.CASCADE)
@@ -88,6 +88,9 @@ class File(models.Model):
 
     # 文件编辑状态
     f_status = models.BooleanField(default=False)
+
+    # 最后一个修改文档的人
+    last_user = models.ForeignKey(MyUser, on_delete=models.CASCADE, null=True, related_name="last_user")
 
     # 删除时间
     f_dtime = models.DateTimeField(null=True)

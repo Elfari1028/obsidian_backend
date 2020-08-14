@@ -92,6 +92,19 @@ def my_status(request):
         return JsonResponse({"username": "", "User_id": -1, "success": False, "exc": "please login or register"})
 
 
+def get_information(request):
+    if request.user.is_authenticated:
+        return JsonResponse({"success": True, "exc": "", "username": request.user.username, "email": request.user.email,
+                             "sex": 2 if request.user.sex is None else int(request.user.sex),
+                             "mood": "" if request.user.u_intro is None else request.user.u_intro,
+                             "tel": "" if request.user.tel is None else request.user.tel,
+                             "age": -1 if request.user.u_intro is None else request.user.u_intro})
+    else:
+        # 暂定没登录时返回-1
+        return JsonResponse({"success": False, "exc": "please login or register", "username": "", "email": "",
+                             "sex": 2, "mood": "", "tel": "", "age": -1})
+
+
 def upload_avatar(request):
     user = request.user
     user.u_avatar = request.FILES['avatar']

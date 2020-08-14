@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from datetime import timezone, datetime
 
 sys.path.append("../")
-from account.models import MyUser, File, Team, Template, TeamMember, DocImage, BrowseRecords
+from account.models import MyUser, File, Team, Template, TeamMember, DocImage, BrowseRecords, EditHistory
 
 
 def set_permission(new_doc, auth_str, rank):
@@ -81,7 +81,7 @@ def create_doc(request):
             return JsonResponse({"success": False, "exc": "team id not exist", "file": -1})
     visitorAuth = data['visitorAuth']
     set_permission(newDoc, visitorAuth, 3)  # rank = 3 设置其他人权限
-    newDoc.status = True  # 作者获得锁
+    newDoc.f_status = True  # 作者获得锁
     newDoc.last_user = request.user
     newDoc.save()
     return JsonResponse({"success": True, "exc": "", "file": newDoc.f_id})
@@ -110,12 +110,12 @@ def open_one_doc(request):
     try:
         doc = File.objects.get(f_id__exact=doc_id)
         creator = doc.u_id
-        if doc.status:  # 有锁
-            if (datetime.now() - doc.f_etime).minutes <= 2:  # 锁有效
+        if doc.f_status:  # 有锁
+            if (datetime.now() - doc.f_etime).total_seconds() <= 120:  # 锁有效
                 return JsonResponse({"success": False, "exc": "file is in use", "title": "", "document": "",
                                      "auth": "", "creator": {"id": creator.id, "name": creator.username,
                                                              "avatar": creator.u_avatar.url}})
-            doc.status = False
+        #    doc.f_status = False  # 锁失效时让它继续失效，除非后续发现能编辑
         permission_str = generate_permission_str(doc, get_identity(request.user, doc))
         if permission_str.find("R") == -1:
             return JsonResponse({"success": False, "exc": "not permitted", "title": "", "document": "",
@@ -123,7 +123,9 @@ def open_one_doc(request):
                                                          "avatar": creator.u_avatar.url}})
         BrowseRecords.objects.create(u_id=request.user, f_id=doc)  # 有读权限
         if permission_str.find("W") != -1:
-            doc.status = True  # 上锁
+            doc.f_status = True  # 上锁
+            doc.last_user = request.user
+            doc.save()
         content = "" if doc.f_content is None else doc.f_content
         returnDict = {"success": True, "exc": "", "title": doc.f_title, "document": content, 'auth': permission_str,
                       "creator": {"id": creator.id, "name": creator.username, "avatar": creator.u_avatar.url}}
@@ -369,16 +371,19 @@ def auto_save_doc(request):
     data = simplejson.loads(request.body)
     doc = File.objects.get(f_id__exact=data['doc_id'])
     document = data['document']
-    if doc.status:  # 有锁
+    if doc.f_status:  # 有锁
         if doc.last_user == request.user:  # 本人拥有
             doc.f_content = document
             doc.save()
+            EditHistory.objects.create(u_id=request.user, f_id=doc)
             return JsonResponse({"success": True, "exc": ""})
-        if (datetime.now() - doc.f_etime).minutes() <= 2:  # 非本人拥有且锁未过期
+        if (datetime.now() - doc.f_etime).total_seconds() <= 120:  # 非本人拥有且锁未过期
             return JsonResponse({"success": False, "exc": "file in use"})
-    # 1.无锁  2.锁非本人拥有且过期
+    # 1.无锁且最近一次是本人写  2.锁非本人拥有且过期且最近一次是本人写
     if doc.last_user == request.user:
         doc.f_content = document
+        doc.f_status = True  # 模拟掉线后再次连接的情况，情况1代表着自己掉线，情况2代表他人掉线且他人没写
+        EditHistory.objects.create(u_id=request.user, f_id=doc)
         doc.save()
         return JsonResponse({"success": True, "exc": ""})
     return JsonResponse({"success": False, "exc": "not permitted"})
@@ -388,18 +393,20 @@ def close_doc(request):
     data = simplejson.loads(request.body)
     doc = File.objects.get(f_id__exact=data['doc_id'])
     document = data['document']
-    if doc.status:
+    if doc.f_status:
         if doc.last_user == request.user:
             doc.f_content = document
-            doc.status = False  # 释放锁
+            doc.f_status = False  # 释放锁
             doc.save()
+            EditHistory.objects.create(u_id=request.user, f_id=doc)
             return JsonResponse({"success": True, "exc": ""})
-        if (datetime.now() - doc.f_etime).minutes() <= 2:  # 非本人拥有且锁未过期
+        if (datetime.now() - doc.f_etime).total_seconds() <= 120:  # 非本人拥有且锁未过期
             return JsonResponse({"success": False, "exc": "file in use"})
     if doc.last_user == request.user:
         doc.f_content = document
-        doc.status = False
+        doc.f_status = False
         doc.save()
+        EditHistory.objects.create(u_id=request.user, f_id=doc)
         return JsonResponse({"success": True, "exc": ""})
     return JsonResponse({"success": False, "exc": "not permitted"})
 

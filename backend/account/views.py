@@ -95,9 +95,9 @@ def my_status(request):
 def get_information(request):
     if request.user.is_authenticated:
         return JsonResponse({"success": True, "exc": "", "username": request.user.username, "email": request.user.email,
-                             "sex": 2 if request.user.sex is None else int(request.user.sex),
+                             "sex": 2 if request.user.u_sex is None else int(request.user.u_sex),
                              "mood": "" if request.user.u_intro is None else request.user.u_intro,
-                             "tel": "" if request.user.tel is None else request.user.tel,
+                             "tel": "" if request.user.u_tel is None else request.user.u_tel,
                              "age": -1 if request.user.u_intro is None else request.user.u_intro})
     else:
         # 暂定没登录时返回-1

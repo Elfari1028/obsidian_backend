@@ -69,7 +69,7 @@ class File(models.Model):
     f_title = models.CharField(max_length=20)
 
     # 文件内容（存储方式待定）
-    f_content = RichTextUploadingField(max_length=100000, null=True, blank=True)
+    f_content = models.TextField(max_length=100000, null=True, blank=True)
 
     # 创建时间（创建时生成）
     f_ctime = models.DateTimeField(auto_now_add=True)
@@ -128,7 +128,7 @@ class Comment(models.Model):
 
     # 所属文件ID
     f_id = models.ForeignKey(File, on_delete=models.DO_NOTHING, default=None)
-    
+
     # 用户ID
     u_id = models.ForeignKey(MyUser, on_delete=models.CASCADE)
 
@@ -194,7 +194,7 @@ class Template(models.Model):
     u_id = models.ForeignKey(MyUser, on_delete=models.CASCADE)
 
     # 模板文件内容
-    content = RichTextUploadingField(max_length=100000, null=True, blank=True)
+    content = models.TextField(max_length=100000, null=True, blank=True)
 
     # 创建时间
     create_time = models.DateTimeField(auto_now_add=True)

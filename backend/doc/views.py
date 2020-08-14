@@ -10,7 +10,7 @@ from datetime import timezone
 
 
 sys.path.append("../")
-from account.models import MyUser, File, Team, Template, TeamMember, EditHistory
+from account.models import MyUser, File, Team, Template, TeamMember, DocImage, BrowseRecords
 
 
 def set_permission(new_doc, auth_str, rank):
@@ -36,13 +36,13 @@ def get_identity(person, doc):
     team = doc.t_id
     if team is None:  # 如果数据库中为null则这里返回的是None
         return 3  # 没有团队，属于其他人
-    if team.creater_user.id == person.id:  # 队长
+    if team.create_user.id == person.id:  # 队长
         return 1
-    try:
-        result = TeamMember.objects.get(Q(t_id__t_id__exact=team.t_id) & Q(u_id__id__exact=person.id))
+    result = TeamMember.objects.filter(Q(t_id__t_id__exact=team.t_id) & Q(u_id__id__exact=person.id)
+                                       & Q(status__exact=2))
+    if result.exists():
         return 2  # 找到了这个人，说明是队员
-    except TeamMember.DoesNotExist:
-        return 3  # 没找到，说明属于其他人
+    return 3  # 没找到，说明属于其他人
 
 
 # 生成权限字符串auth
@@ -75,7 +75,7 @@ def create_doc(request):
             return JsonResponse({"success": False, "exc": "template id not exist", "file": -1})  # 存疑，创建失败返回什么
     if data['team'] != -1:
         try:
-            newDoc.t_id = Team.objects.get(t_id__exact=data['t_id'])
+            newDoc.t_id = Team.objects.get(t_id__exact=data['team'])
             teamAuth = data['teamAuth']
             set_permission(newDoc, teamAuth, 2)  # rank = 2 设置普通团队成员权限
         except Team.DoesNotExist:
@@ -86,6 +86,20 @@ def create_doc(request):
     return JsonResponse({"success": True, "exc": "", "file": newDoc.f_id})
 
 
+def upload_image(request):
+    doc_id = request.POST.get('doc_id')
+    try:
+        file = File.objects.get(f_id__exact=doc_id)
+        rank = get_identity(request.user, file)  # 获得这个人对文档的权限
+        if not rank <= file.is_editor:
+            return JsonResponse({"success": False, "exc": "not allowed to edit", "path": ""})
+        docImage = DocImage.objects.create(f_id=file, img=request.FILES['image'])
+        docImage.save()
+        return JsonResponse({"success": True, "exc": "", "path": docImage.img.url})
+    except File.DoesNotExist:
+        return JsonResponse({"success": False, "exc": "file not exist", "path": ""})
+
+
 def open_one_doc(request):
     data = simplejson.loads(request.body)
     doc_id = data['doc_id']
@@ -93,7 +107,12 @@ def open_one_doc(request):
         doc = File.objects.get(f_id__exact=doc_id)
         creator = doc.u_id
         permission_str = generate_permission_str(doc, get_identity(request.user, doc))
-        content = "" if doc.f_content is None or permission_str.find("R") == -1 else doc.f_content
+        content = ""
+        if permission_str.find("R") == -1:
+            content = ""
+        else:
+            content = "" if doc.f_content is None else doc.f_content
+            BrowseRecords.objects.create(u_id=request.user, f_id=doc)
         returnDict = {"success": True, "exc": "", "title": doc.f_title, "document": content, 'auth': permission_str,
                       "creator": {"id": creator.id, "name": creator.username, "avatar": creator.u_avatar.url}}
         return JsonResponse(returnDict)
@@ -122,7 +141,7 @@ def list_all_my_docs(request):
     return JsonResponse({"success": True, "exc": "", "listnum": len(result), "list": returnList})
 
 
-def delete_doc(request):
+def put_into_recycle_bin(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "please login or register"})
     result = simplejson.loads(request.body)
@@ -131,7 +150,7 @@ def delete_doc(request):
         permission = generate_permission_str(file, get_identity(request.user, file))
         if permission.find("D") == -1:
             return JsonResponse({"success": False, "exc": "don't have the permission to delete"})
-        file.delete()
+        file.trash_status = True  # 放入回收站
         return JsonResponse({"success": True, "exc": ""})
     except File.DoesNotExist as e:
         return JsonResponse({"success": False, "exc": e.__str__()})
@@ -304,11 +323,26 @@ def list_all_team_docs(request):
         res = []
         for file in file_list:
             temp = {
-                'file_id': file.f_id,
-                'file_title': file.f_title,
-                'delete_time': file.f_dtime
+                'doc_id': file.f_id,
+                'title': file.f_title,
+                'team_id': file.t_id.t_id,
+                'team_name': file.t_id.t_name,
+                'edit_time': file.f_etime,
             }
             res.append(temp)
-        return JsonResponse({"success": 'true', "exc": '', 'file_list': res})
+        return JsonResponse({"success": 'true', "exc": '', 'File_list': res})
     except Exception as e:
         return JsonResponse({"success": 'false', "exc": e.__str__})
+
+
+def get_recent_read(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": False, "exc": "please login or register", "list": []})
+    returnList = []
+    records = BrowseRecords.objects.filter(u_id__id__exact=request.user.id).order_by('-browse_time')
+    for record in records:
+        file = record.f_id
+        temp = {"doc_id": file.f_id, "title": file.f_title, "team_id": -1 if file.t_id is None else file.t_id.t_id,
+                "team_name": "" if file.t_id is None else file.t_id.t_name, "time": file.f_etime}
+        returnList.append(temp)
+    return JsonResponse({"success": True, "exc": "", "list": returnList})

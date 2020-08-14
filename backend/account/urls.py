@@ -12,9 +12,13 @@ urlpatterns = [
     path('email_used/', views.email_used),
     path('username_used/', views.username_used),
     path('my_status/', views.my_status),
+    path('upload_avatar/', views.upload_avatar),
+    path('get_avatar/', views.get_avatar),
     path('modify_password/', views.modify_password),
     path('modify_username/', views.modify_username),
     path('create_team/', views.create_team),
     path('apply_to_join/', views.apply_to_join),
     path('deal_with_invitation/', views.deal_with_invitation),
+    path('get_identity_in_team/', views.get_identity_in_team),
+    path('get_my_teams/', views.get_my_teams),
 ]

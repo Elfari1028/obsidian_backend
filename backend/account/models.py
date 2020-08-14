@@ -7,10 +7,18 @@ from ckeditor_uploader.fields import RichTextUploadingField
 from django.urls import reverse
 
 
-# Create your models here.
+def user_avatar_path(instance, filename):
+    # print(filename)
+    ext = filename.split('.')[-1]
+    # print(ext)
+    filename = '{}.{}'.format(uuid.uuid4().hex[:8], ext)
+    # return the whole path to the file
+    return "{0}/{1}/{2}".format(instance.username, "avatar", filename)
+
+
 class MyUser(AbstractUser):
     # 用户头像
-    u_avatar = models.ImageField(upload_to='Avatar/', default='Avatar/default_avatar.jpg')
+    u_avatar = models.ImageField(upload_to=user_avatar_path, default='default_avatar.jpg')
 
     # 用户电话
     u_tel = models.CharField(max_length=20, null=True, unique=True)
@@ -218,7 +226,7 @@ def user_directory_path(instance, filename):
     # print(ext)
     filename = '{}.{}'.format(uuid.uuid4().hex[:8], ext)
     # return the whole path to the file
-    return "{0}/{1}/{2}".format(instance.user.username, "doc_images", filename)
+    return "{0}/{1}/{2}".format(instance.f_id.u_id.username, "doc_images", filename)
 
 
 class DocImage(models.Model):

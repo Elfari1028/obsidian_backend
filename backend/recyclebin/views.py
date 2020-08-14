@@ -32,12 +32,15 @@ def get_team_deleted_file(request):
         res = []
         for file in file_list:
             temp = {
-                'file_id': file.f_id,
-                'file_title': file.f_title,
+                'doc_id': file.f_id,
+                'title': file.f_title,
+                'team_id': file.t_id.t_id,
+                'team_name': file.t_id.t_name,
+                'edit_time': file.f_etime,
                 'delete_time': file.f_dtime
             }
             res.append(temp)
-        return JsonResponse({"success": 'true', "exc": '', 'file_list': res})
+        return JsonResponse({"success": 'true', "exc": '', 'File_list': res})
     except Exception as e:
         return JsonResponse({"success": 'false', "exc": e.__str__})
 
@@ -61,9 +64,10 @@ def get_private_deleted_file(request):
             temp = {
                 'doc_id': file.f_id,
                 'title': file.f_title,
-                'delete_time': file.f_dtime,
                 'team_id': file.t_id.t_id,
                 'team_name': file.t_id.t_name,
+                'edit_time': file.f_etime,
+                'delete_time': file.f_dtime
             }
             res.append(temp)
         return JsonResponse({"success": 'true', "exec": '', 'list': res})

@@ -215,3 +215,16 @@ def remove_member(request):
         return JsonResponse({'success': True, 'exc': ''})
     except TeamMember.DoesNotExist:
         return JsonResponse({'success': False, 'exc': 'you are not in the team.'})
+
+
+def list_my_invitations(request):
+    data = simplejson.loads(request.body)
+    if not request.user.is_authenticated:
+        return JsonResponse({"Invitation_list": [], "success": False, "exc": "please login or register"})
+    result = TeamMember.objects.filter(Q(u_id__id__exact=data['User_id']) & Q(status__exact=1))
+    returnList = []
+    for invitation in result:
+        temp = {"Team_name": invitation.t_id.t_name, "Team_id": invitation.t_id.t_id,
+                "User_name": invitation.inviter.username}
+        returnList.append(temp)
+    return JsonResponse({"Invitation_list": returnList, "success": True, "exc": ""})

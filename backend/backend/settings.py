@@ -38,9 +38,6 @@ INSTALLED_APPS = [
     'dwebsocket',
     # 添加账户类表
     'account.apps.AccountConfig',
-
-    'ckeditor',
-    'ckeditor_uploader',
 ]
 
 MIDDLEWARE = [

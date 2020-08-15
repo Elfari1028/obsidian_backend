@@ -251,7 +251,7 @@ def remove_member(request):
 def list_my_invitations(request):
     data = simplejson.loads(request.body)
     if not request.user.is_authenticated:
-        return JsonResponse({"Invitation_list": [], "success": False, "exc": "please login or register"})
+        return JsonResponse({"Invitation_list": [], "success": False, "exc": "请先登录"})
     result = TeamMember.objects.filter(Q(u_id__id__exact=data['User_id']) & Q(status__exact=1))
     returnList = []
     for invitation in result:

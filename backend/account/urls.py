@@ -12,6 +12,7 @@ urlpatterns = [
     path('email_used/', views.email_used),
     path('username_used/', views.username_used),
     path('my_status/', views.my_status),
+    path('modify_information/', views.modify_information),
     path('get_information/', views.get_information),
     path('upload_avatar/', views.upload_avatar),
     path('get_avatar/', views.get_avatar),

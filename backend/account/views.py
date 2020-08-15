@@ -19,6 +19,22 @@ class CustomBackend(ModelBackend):
             return None
 
 
+def search_email(email):
+    try:
+        result = MyUser.objects.get(email__exact=email)
+        return True
+    except MyUser.DoesNotExist:
+        return False
+
+
+def search_username(username):
+    try:
+        result = MyUser.objects.get(username__exact=username)
+        return True
+    except MyUser.DoesNotExist:
+        return False
+
+
 def mail_check(mail_address):
     reg = re.compile(
         r'^[_a-z0-9-]+(\.[a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$')
@@ -28,19 +44,17 @@ def mail_check(mail_address):
 
 def email_used(request):
     data = simplejson.loads(request.body)
-    try:
-        result = MyUser.objects.get(email__exact=data['email'])
-        return JsonResponse({"success": False, "exc": "this email address has been used"})
-    except MyUser.DoesNotExist:
+    if search_email(data['email']):
+        return JsonResponse({"success": False, "exc": "此电子邮箱已用过"})
+    else:
         return JsonResponse({"success": True, "exc": ""})
 
 
 def username_used(request):
     data = simplejson.loads(request.body)
-    try:
-        result = MyUser.objects.get(username__exact=data['username'])
-        return JsonResponse({"success": False, "exc": "this username has been used"})
-    except MyUser.DoesNotExist:
+    if search_username(data['username']):
+        return JsonResponse({"success": False, "exc": "此用户名已被使用"})
+    else:
         return JsonResponse({"success": True, "exc": ""})
 
 
@@ -50,14 +64,14 @@ def register1(request):
     password = data['password']
     email = data['email']
     if not mail_check(email):
-        return JsonResponse({"success": 0, "exc": "the email address is invalid"})
+        return JsonResponse({"success": False, "exc": "电子邮箱非法"})
     try:
         #  dic = {'u_tel': data['u_tel'], 'u_intro': data['u_intro'], 'u_sex': data['u_sex'], 'u_age': data['u_age']}
         user = MyUser.objects.create_user(userName, email, password)
         user.save()
-        return JsonResponse({"success": 1, "exc": "register success"})
+        return JsonResponse({"success": True, "exc": ""})
     except IntegrityError as e:
-        return JsonResponse({"success": 0, "exc": e.__str__()})
+        return JsonResponse({"success": False, "exc": e.__str__()})
 
 
 def login1(request):
@@ -67,7 +81,7 @@ def login1(request):
 
     if request.user.is_authenticated:
         # 方法1 如果登录了则要求注销后再登录
-        return JsonResponse({"success": False, "exc": "you have logged in, please logout to change account"})
+        return JsonResponse({"success": False, "exc": "你已经登录，需要注销此用户后才能登录其它账号"})
         # 方法2 自动注销上一次登录，然后进行本次登录
         # logout(request)
     authentication = CustomBackend()
@@ -76,12 +90,12 @@ def login1(request):
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         login(request, user)
         return JsonResponse({"success": True, "exc": ""})
-    return JsonResponse({"success": False, "exc": "username or password error"})
+    return JsonResponse({"success": False, "exc": "用户名或密码错误"})
 
 
 def logout1(request):
     logout(request)
-    return JsonResponse({"success": "logout success", "exc": 0})
+    return JsonResponse({"success": True, "exc": ""})
 
 
 def my_status(request):
@@ -89,20 +103,42 @@ def my_status(request):
         return JsonResponse({"username": request.user.username, "User_id": request.user.id, "success": True, "exc": ""})
     else:
         # 暂定没登录时返回-1
-        return JsonResponse({"username": "", "User_id": -1, "success": False, "exc": "please login or register"})
+        return JsonResponse({"username": "", "User_id": -1, "success": False, "exc": "请先登录"})
 
 
 def get_information(request):
     if request.user.is_authenticated:
         return JsonResponse({"success": True, "exc": "", "username": request.user.username, "email": request.user.email,
-                             "sex": 2 if request.user.u_sex is None else int(request.user.u_sex),
+                             "sex": 2 if request.user.u_sex is None else request.user.u_sex,
                              "mood": "" if request.user.u_intro is None else request.user.u_intro,
                              "tel": "" if request.user.u_tel is None else request.user.u_tel,
                              "age": -1 if request.user.u_intro is None else request.user.u_intro})
     else:
         # 暂定没登录时返回-1
-        return JsonResponse({"success": False, "exc": "please login or register", "username": "", "email": "",
+        return JsonResponse({"success": False, "exc": "请先登录", "username": "", "email": "",
                              "sex": 2, "mood": "", "tel": "", "age": -1})
+
+
+def modify_information(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": False, "exc": "请先登录", "list": []})
+    data = simplejson.loads(request.body)
+    if search_username(data['username']) and data['username'] != request.user.username:
+        return JsonResponse({"success": False, "exc": "用户名已被占用"})
+    if search_email(data['email']) and data['email'] != request.user.email:
+        return JsonResponse({"success": False, "exc": "此电子邮箱已用过"})
+    if data['password'] == "":
+        return JsonResponse({"success": False, "exc": "密码不能为空"})
+    user = request.user
+    user.username = data['username']
+    user.email = data['eamil']
+    user.set_password(data['password'])
+    user.u_sex = data['sex']
+    user.u_age = data['age']
+    user.u_intro = data['mood']
+    user.u_tel = data['tel']
+    user.save()
+    return JsonResponse({"success": True, "exc": ""})
 
 
 def upload_avatar(request):
@@ -116,7 +152,7 @@ def get_avatar(request):
     if request.user.is_authenticated:
         return JsonResponse({"success": True, "exc": "", "url": request.user.u_avatar.url})
     else:
-        return JsonResponse({"success": False, "exc": "please login or register", "url": ""})
+        return JsonResponse({"success": False, "exc": "请先登录", "url": ""})
 
 
 def modify_username(request):
@@ -127,7 +163,7 @@ def modify_username(request):
     try:
         check = MyUser.objects.get(username__exact=newName)
         if currentUser.username != check.username:
-            return JsonResponse({"success": False, "exc": "the username has been used"})
+            return JsonResponse({"success": False, "exc": "用户名已被占用"})
         else:
             currentUser.username = newName
             currentUser.save()
@@ -146,14 +182,14 @@ def modify_password(request):
         new_pwd1 = data['new_password1']
         new_pwd2 = data['new_password2']
         if new_pwd1 == "" or new_pwd2 == "":
-            return JsonResponse({"success": False, "exc": "password should not be empty"})
+            return JsonResponse({"success": False, "exc": "密码不能为空"})
         if new_pwd1 != new_pwd2:
-            return JsonResponse({"success": False, "exc": "should be the same"})
+            return JsonResponse({"success": False, "exc": "两次密码应该相同"})
         user.set_password(new_pwd1)
         user.save()
         update_session_auth_hash(request, user)
         return JsonResponse({"success": True, "exc": ""})
-    return JsonResponse({"success": False, "exc": "old password error"})
+    return JsonResponse({"success": False, "exc": "原密码错误"})
 
 
 def create_team(request):
@@ -271,9 +307,9 @@ def get_identity_in_team(request):
         team = Team.objects.get(t_id__exact=data['Team_id'])
         user = MyUser.objects.get(id__exact=data['User_id'])
     except Team.DoesNotExist:
-        return JsonResponse({"User_status": -1, "success": False, "exc": "team not exist"})
+        return JsonResponse({"User_status": -1, "success": False, "exc": "队伍不存在"})
     except MyUser.DoesNotExist:
-        return JsonResponse({"User_status": -1, "success": False, "exc": "user not exist"})
+        return JsonResponse({"User_status": -1, "success": False, "exc": "用户不存在"})
     teamMember = TeamMember.objects.filter(Q(t_id__t_id__exact=data['Team_id'])
                                            & Q(u_id__id__exact=data['User_id']) & Q(status__exact=2)).first()
     if teamMember is None:
@@ -286,7 +322,7 @@ def get_identity_in_team(request):
 
 def get_my_teams(request):
     if not request.user.is_authenticated:
-        return JsonResponse({"success": False, "exc": "please login or register", "list": []})
+        return JsonResponse({"success": False, "exc": "请先登录", "list": []})
     result = TeamMember.objects.filter(Q(u_id__id__exact=request.user.id)
                                        & Q(status__exact=2)).order_by('t_id_id').distinct()
     returnList = []

@@ -168,21 +168,19 @@ def create_team(request):
     # exc：字符串，表示错误信息，成功则为空
     data = simplejson.loads(request.body)
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'exc': 'you should login first.'})
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
     try:
         myuser = MyUser.objects.get(id=data['User_id'])
-        if request.user.is_authenticated:
-            try:
-                team = Team.objects.get(t_name=data['Team_name'])
-                return JsonResponse({'success': False, 'exc': 'the team name has been used.'})
-            except Team.DoesNotExist:
-                record = Team.objects.create(t_name=data['Team_name'], create_user=myuser)
-                TeamMember.objects.create(t_id_id=record.t_id, u_id_id=data['User_id'], status=2)
-                return JsonResponse({'Team_id': record.t_id, 'success': True, 'exc': ''})
-        else:
-            return JsonResponse({'success': False, 'exc': 'user should login first.'})
+        try:
+            team = Team.objects.get(t_name=data['Team_name'])
+            return JsonResponse({'success': False, 'exc': '团队名称已被占用'})
+        except Team.DoesNotExist:
+            record = Team.objects.create(t_name=data['Team_name'], create_user=myuser)
+            TeamMember.objects.create(t_id_id=record.t_id, u_id_id=data['User_id'], status=2)
+            return JsonResponse({'Team_id': record.t_id, 'success': True, 'exc': ''})
+
     except MyUser.DoesNotExist:
-        return JsonResponse({'success': False, 'exc': 'user does not exist.'})
+        return JsonResponse({'success': False, 'exc': '用户不存在'})
 
 
 def deal_with_invitation(request):
@@ -200,18 +198,18 @@ def deal_with_invitation(request):
         try:
             invited_user = MyUser.objects.get(id=data['User_id'])
         except MyUser.DoesNotExist:
-            return JsonResponse({'success': False, 'exc': 'the user does not exist.'})
+            return JsonResponse({'success': False, 'exc': '用户不存在'})
 
         try:
             team = Team.objects.get(t_id=data['Team_id'])
         except MyUser.DoesNotExist:
-            return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
+            return JsonResponse({'success': False, 'exc': '团队不存在'})
 
         accepted = data['Accepted']
         try:
             record = TeamMember.objects.get(t_id__t_id=data['Team_id'], u_id__id=data['User_id'])
         except TeamMember.DoesNotExist:
-            return JsonResponse({'success': False, 'exc': 'invitation does not exist.'})
+            return JsonResponse({'success': False, 'exc': '邀请不存在'})
         if accepted:
             record.status = 2
             record.save()
@@ -219,9 +217,9 @@ def deal_with_invitation(request):
         # 拒绝则删除邀请
         else:
             record.delete()
-            return JsonResponse({'success': False, 'exc': 'invitation is declined.'})
+            return JsonResponse({'success': False, 'exc': '邀请已被拒绝'})
     else:
-        return JsonResponse({'success': False, 'exc': 'you should login first.'})
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
 
 
 def apply_to_join(request):
@@ -235,17 +233,17 @@ def apply_to_join(request):
     # -exc：字符串，表示错误信息，成功则为空
     data = simplejson.loads(request.loads)
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'exc': 'you should login first'})
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
 
     try:
         team = Team.objects.get(t_id=data['Team_id'])
     except Team.DoesNotExist:
-        return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
+        return JsonResponse({'success': False, 'exc': '团队不存在'})
 
     try:
         applicant = MyUser.objects.get(id=data['User_id'])
     except MyUser.DoesNotExist:
-        return JsonResponse({'success': False, 'exc': 'the user does not exist.'})
+        return JsonResponse({'success': False, 'exc': '用户不存在'})
 
     try:
         record = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['User_id'])
@@ -257,10 +255,10 @@ def apply_to_join(request):
             return JsonResponse({'success': True, 'exc': ''})
         elif status == 1:
             # 在申请前有人邀请了
-            return JsonResponse({'success': False, 'exc': 'you have been invited, please deal with invitation.'})
+            return JsonResponse({'success': False, 'exc': '已经收到邀请，请通过邀请'})
         else:
             # 已经加入团队了，就不能再发申请
-            return JsonResponse({'success': False, 'exc': 'you have been in the team.'})
+            return JsonResponse({'success': False, 'exc': '您已经加入了该团队，请勿重复操作'})
     except TeamMember.DoesNotExist:
         # 全新的申请
         newrecord = TeamMember.objects.create(t_id=team, u_id=applicant, status=0)

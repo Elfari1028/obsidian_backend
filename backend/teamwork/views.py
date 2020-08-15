@@ -48,7 +48,7 @@ def get_team_name(request):
         team = Team.objects.get(t_id=data['Team_id'])
         return JsonResponse({'Team_name': team.t_name, 'success': True, 'exc': ''})
     except Team.DoesNotExist:
-        return JsonResponse({'success': False, 'exc': ''})
+        return JsonResponse({'success': False, 'exc': '团队不存在'})
 
 
 def invite_members(request):
@@ -74,16 +74,16 @@ def invite_members(request):
                     # 是成员可以邀请
                     teammember = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['Inviter_id'], status=2)
                 except TeamMember.DoesNotExist:
-                    return JsonResponse({'success': False, 'exc': 'you are not in this team.'})
+                    return JsonResponse({'success': False, 'exc': '不在团队中，无法邀请其他人'})
         except Team.DoesNotExist:
-            return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
+            return JsonResponse({'success': False, 'exc': '团队不存在'})
 
         try:
             myuser = MyUser.objects.get(id=data['User_id'])
             try:
                 # 如果已经是成员，就不能被邀请了
                 exist = TeamMember.objects.get(u_id=data['User_id'], t_id=data['Team_id'], status=2)
-                return JsonResponse({'success': False, 'exc': 'the user is in your team.'})
+                return JsonResponse({'success': False, 'exc': '对方已在团队中，无法重复邀请'})
             except TeamMember.DoesNotExist:
                 # 没加入，就能被邀请，每次join_time字段更新
                 try:
@@ -91,16 +91,16 @@ def invite_members(request):
                     exist = TeamMember.objects.get(u_id=data['User_id'], t_id=data['Team_id'])
                     exist.inviter.id = data['Inviter_id']
                     exist.save()
-                    return JsonResponse({'success': True, 'exc': 'invite again'})
+                    return JsonResponse({'success': True, 'exc': ''})
                 except TeamMember.DoesNotExist:
                     # 没邀请过
                     team = Team.objects.get(t_id=data['Team_id'])
                     record = TeamMember.objects.create(t_id=team, u_id=myuser, inviter_id=data['Inviter_id'])
                     return JsonResponse({'success': True, 'exc': ''})
         except MyUser.DoesNotExist:
-            return JsonResponse({'success': False, 'exc': 'you invite an unknown user.'})
+            return JsonResponse({'success': False, 'exc': '用户不存在'})
     else:
-        return JsonResponse({'success': False, 'exc': 'user should login first.'})
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
 
 
 def disband(request):
@@ -113,13 +113,13 @@ def disband(request):
     # -exc：字符串，表示错误信息，成功则为空
     data = simplejson.loads(request.body)
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'exc': 'you should login first.'})
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
     if not isleader(request):
-        return JsonResponse({'success': False, 'exc': 'you are not the leader.'})
+        return JsonResponse({'success': False, 'exc': '您无权解散团队'})
     try:
         team = Team.objects.get(t_id=data['Team_id'])
     except Team.DoesNotExist:
-        return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
+        return JsonResponse({'success': False, 'exc': '团队不存在'})
     # 团队下的文件外键设为null
     # 文件权限还要调整吗
     qs = File.objects.filter(t_id=data['Team_id'])
@@ -150,15 +150,15 @@ def deal_with_application(request):
     # -success：布尔值，表示是否成功
     # -exc：字符串，表示错误信息，成功则为空
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'exc': 'you should login first.'})
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
     if not isleader(request):
-        return JsonResponse({'success': False, 'exc': 'you are not the leader of the team'})
+        return JsonResponse({'success': False, 'exc': '您无权处理申请'})
     data = simplejson.loads(request.body)
 
     try:
         record = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['User_id'])
     except TeamMember.DoesNotExist:
-        return JsonResponse({'success': False, 'exc': 'unknown application.'})
+        return JsonResponse({'success': False, 'exc': '申请不存在'})
 
     if data['Accepted']:
         record.status = 2
@@ -167,7 +167,7 @@ def deal_with_application(request):
     else:
         # 拒绝就删除申请
         record.delete()
-        return JsonResponse({'success': False, 'exc': 'application is declined.'})
+        return JsonResponse({'success': False, 'exc': '申请未通过'})
 
 
 def members_in_team(request):
@@ -185,7 +185,7 @@ def members_in_team(request):
     # -exc：字符串，表示错误信息，成功则为空
     data = simplejson.loads(request.body)
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'exc': 'you should login first.'})
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
     try:
         team = Team.objects.get(t_id=data['Team_id'])
         leader = MyUser.objects.get(id=team.create_user.id)
@@ -212,7 +212,7 @@ def members_in_team(request):
                 returnlist.append(info)
         return JsonResponse({'Member_list': returnlist, 'success': True, 'exc': ''})
     except Team.DoesNotExist:
-        return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
+        return JsonResponse({'success': False, 'exc': '团队不存在'})
 
 
 def remove_member(request):
@@ -226,18 +226,18 @@ def remove_member(request):
     # -exc：字符串，表示错误信息，成功则为空
     data = simplejson.loads(request.body)
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'exc': ''})
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
     try:
         team = Team.objects.get(t_id=data['Team_id'])
     except Team.DoesNotExist:
-        return JsonResponse({'success': False, 'exc': 'the team does not exist.'})
+        return JsonResponse({'success': False, 'exc': '团队不存在'})
     try:
         member = MyUser.objects.get(id=data['User_id'])
     except MyUser.DoesNotExist:
-        return JsonResponse({'success': False, 'exc': 'the user doex not exist.'})
+        return JsonResponse({'success': False, 'exc': '用户不存在'})
     # 如果是队长，不能直接退出
     if team.create_user.id == member.id:
-        return JsonResponse({'success': False, 'exc': 'the leader cannot pull off directly.'})
+        return JsonResponse({'success': False, 'exc': '您是队长，无法直接退出团队'})
     # 如果是成员，可以退出
     try:
         record = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['User_id'], status=2)
@@ -245,7 +245,7 @@ def remove_member(request):
         # 还要对文件操作吗
         return JsonResponse({'success': True, 'exc': ''})
     except TeamMember.DoesNotExist:
-        return JsonResponse({'success': False, 'exc': 'you are not in the team.'})
+        return JsonResponse({'success': False, 'exc': '不在团队中'})
 
 
 def list_my_invitations(request):
@@ -276,11 +276,11 @@ def list_applications(request):
     # -exc：字符串，表示错误信息，成功则为空
     data = simplejson.loads(request.body)
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'exc': 'you should login first'})
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
     try:
         team = Team.objects.get(t_id=data['Team_id'])
     except Team.DoesNotExist:
-        return JsonResponse({'success': False, 'exc': 'the team do not exist.'})
+        return JsonResponse({'success': False, 'exc': '团队不存在'})
     qs = TeamMember.objects.filter(Q(t_id=data['Team_id']) & Q(status=0))
     tmplist = list(qs.values('u_id'))
     returnlist = []

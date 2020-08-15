@@ -375,7 +375,7 @@ def list_all_templates(request):
     # - list: 数组，元素为模板对象[]
     # 模板对象：{template_id: 正整数，title: 字符串，标题, intro: 字符串，简介}
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'exc': ''})
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
     tmplist = Template.objects.all()
     recordlist = list(tmplist.values('tmplt_id', 'title', 'intro'))
     returnlist = []

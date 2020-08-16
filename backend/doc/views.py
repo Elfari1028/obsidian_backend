@@ -280,12 +280,10 @@ def get_doc_edit_history(request):
         }, {} , {} ]
     '''
     if not request.user.is_authenticated:
-        return JsonResponse({"success": "false", "exc": "please login or register", 'history': ''})
+        return JsonResponse({"success": "false", "exc": "请先登录或注册。", 'history': ''})
     else:
         file_id = request.POST.get('doc_id')
         file = File.objects.get(f_id=file_id)
-
-        file_t_id = file.t_id
 
         # 显然只有拥有读权限的用户可以查看编辑历史
         def get_res_lists():
@@ -298,23 +296,9 @@ def get_doc_edit_history(request):
             return res
 
         # 任何人都可以读
-        if (file.is_read == 3):
+        if get_identity(request.user, file) >= file.is_read:
             history = get_res_lists()
             return JsonResponse({"success": "true", "exc": "", 'history': history})
-        # 团队可读
-        elif (file.is_read == 2):
-            if get_identity(request.user, file) == 2:
-                history = get_res_lists()
-                return JsonResponse({"success": "true", "exc": "", 'history': history})
-            else:
-                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history': ''})
-                # 自己可读
-        elif (file.is_read == 1):
-            if get_identity(request.user, file) == 1:
-                history = get_res_lists()
-                return JsonResponse({"success": "true", "exc": "", 'history': history})
-            else:
-                return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history': ''})
         else:
             return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history': ''})
 
@@ -379,6 +363,7 @@ def list_all_team_docs(request):
                 'team_id': file.t_id.t_id,
                 'team_name': file.t_id.t_name,
                 'edit_time': file.f_etime,
+                'create_time': file.f_ctime,
             }
             res.append(temp)
         return JsonResponse({"success": 'true', "exc": '', 'list': res})

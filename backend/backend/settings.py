@@ -24,7 +24,7 @@ SECRET_KEY = 'i5-1_gmxrg53_r13qwst-d)^&0$+8g3d5+**o2!crm%nb%)#f0'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','front.cabin.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','front.cabin.com', "39.97.183.73"]
 
 # 解决CORS问题
 CORS_ORIGIN_WHITELIST = (
@@ -183,3 +183,5 @@ AUTHENTICATION_BACKENDS = (  # 实现使用邮箱登录
     'django.contrib.auth.backends.ModelBackend',
     'account.views.CustomBackend',
 )
+
+APPEND_SLASH=False

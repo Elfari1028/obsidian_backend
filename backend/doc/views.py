@@ -208,13 +208,13 @@ def find_permission_in_one_group(request):
 
 @require_POST
 @login_required(login_url="/accounts/login1")
-def edit_private_doc_permission(request):
+def edit_permission(request):
     '''
     by lighten:  
-    编辑其他人对个人文档的权限。
+    编辑文档的权限。
     '''
     if not request.user.is_authenticated:
-        return JsonResponse({"success": "false", "exc": "please login or register"})
+        return JsonResponse({"success": "false", "exc": "请先登录或注册。"})
 
     file_id = request.POST.get('doc_id')
     is_read = request.POST.get('read')
@@ -222,21 +222,22 @@ def edit_private_doc_permission(request):
     is_comment = request.POST.get('comment')
 
     file = File.objects.get(f_id=file_id)
-    if file.u_id != request.user.id:
-        return JsonResponse({"success": "false", "exc": "the file does not belong to current user"})
+    if get_identity(request.user, file) != 1:
+        return JsonResponse({"success": "false", "exc": "没有权限编辑当前文档权限。"})
     else:
+        flag = 1 if file.t_id>0 else 2
         # 读
-        file.is_read = 3 if is_read == 'true' else 1
+        file.is_read = 3 if is_read == 'true' else flag
 
         # 写
-        file.is_write = 3 if is_write == 'true' else 1
+        file.is_write = 3 if is_write == 'true' else flag
 
         # 评论
-        file.is_comment = 3 if is_comment == 'true' else 1
+        file.is_comment = 3 if is_comment == 'true' else flag
 
         # 分享
         '''
-        file.is_share = 3 if is_share == 'true' else 1
+        file.is_share = 3 if is_share == 'true' else flag
         '''
 
         file.save()

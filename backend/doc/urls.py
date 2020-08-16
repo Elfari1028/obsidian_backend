@@ -15,7 +15,7 @@ urlpatterns = [
     path('auto_save_doc/', views.auto_save_doc),
     path('list_all_my_docs/', views.list_all_my_docs),
     path('find_permission_in_one_group/', views.find_permission_in_one_group),
-    path('edit_private_permission/', views.edit_private_doc_permission),
+    path('edit_permission/', views.edit_permission),
     path('get_history/', views.get_doc_edit_history),
     path('list_all_team_docs', views.list_all_team_docs),
     path('upload_image/', views.upload_image),

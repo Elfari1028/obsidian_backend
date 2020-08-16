@@ -13,7 +13,7 @@ import json
 # Create your views here.
 
 def isleader(request):
-    # request中必须包含'Team_id'字段
+    # request中必须包含'team_id'字段
     userid = request.session.get('_auth_user_id')
     data = simplejson.loads(request.body)
     team = Team.objects.get(t_id=data['Team_id'])
@@ -37,16 +37,16 @@ def backend_remove_member(request):
 def get_team_name(request):
     # POST(json)
     # 发送：
-    # -Team_id：整型，表示团队id
+    # -team_id：整型，表示团队id
     #
     # 接收：
-    # -Team_name： 字符串，表示团队名称
+    # -team_name： 字符串，表示团队名称
     # -success：布尔值，表示是否成功
     # -exc：字符串，表示错误信息，成功则为空
     data = simplejson.loads(request.body)
     try:
-        team = Team.objects.get(t_id=data['Team_id'])
-        return JsonResponse({'Team_name': team.t_name, 'success': True, 'exc': ''})
+        team = Team.objects.get(t_id=data['team_id'])
+        return JsonResponse({'team_name': team.t_name, 'success': True, 'exc': ''})
     except Team.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '团队不存在'})
 
@@ -54,9 +54,9 @@ def get_team_name(request):
 def invite_members(request):
     # POST(json)
     # 发送：
-    # -Inviter_id：整型，表示邀请者id
-    # -User_id：整型，表示被邀请者id
-    # -Team_id：整型，表示邀请至的团队id
+    # -inviter_id：整型，表示邀请者id
+    # -user_id：整型，表示被邀请者id
+    # -team_id：整型，表示邀请至的团队id
     #
     # 收到：
     # -success：布尔值，表示是否成功
@@ -65,37 +65,37 @@ def invite_members(request):
     if request.user.is_authenticated:
         # 只有在团队里的人才能发送邀请
         try:
-            team = Team.objects.get(t_id=data['Team_id'])
+            team = Team.objects.get(t_id=data['team_id'])
             # 是创建者可以邀请
-            if data['Inviter_id'] == team.create_user.id:
+            if data['inviter_id'] == team.create_user.id:
                 pass
             else:
                 try:
                     # 是成员可以邀请
-                    teammember = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['Inviter_id'], status=2)
+                    teammember = TeamMember.objects.get(t_id=data['team_id'], u_id=data['inviter_id'], status=2)
                 except TeamMember.DoesNotExist:
                     return JsonResponse({'success': False, 'exc': '不在团队中，无法邀请其他人'})
         except Team.DoesNotExist:
             return JsonResponse({'success': False, 'exc': '团队不存在'})
 
         try:
-            myuser = MyUser.objects.get(id=data['User_id'])
+            myuser = MyUser.objects.get(id=data['user_id'])
             try:
                 # 如果已经是成员，就不能被邀请了
-                exist = TeamMember.objects.get(u_id=data['User_id'], t_id=data['Team_id'], status=2)
+                exist = TeamMember.objects.get(u_id=data['user_id'], t_id=data['team_id'], status=2)
                 return JsonResponse({'success': False, 'exc': '对方已在团队中，无法重复邀请'})
             except TeamMember.DoesNotExist:
                 # 没加入，就能被邀请，每次join_time字段更新
                 try:
                     # 之前邀请过
-                    exist = TeamMember.objects.get(u_id=data['User_id'], t_id=data['Team_id'])
-                    exist.inviter.id = data['Inviter_id']
+                    exist = TeamMember.objects.get(u_id=data['user_id'], t_id=data['team_id'])
+                    exist.inviter.id = data['inviter_id']
                     exist.save()
                     return JsonResponse({'success': True, 'exc': ''})
                 except TeamMember.DoesNotExist:
                     # 没邀请过
-                    team = Team.objects.get(t_id=data['Team_id'])
-                    record = TeamMember.objects.create(t_id=team, u_id=myuser, inviter_id=data['Inviter_id'])
+                    team = Team.objects.get(t_id=data['team_id'])
+                    record = TeamMember.objects.create(t_id=team, u_id=myuser, inviter_id=data['inviter_id'])
                     return JsonResponse({'success': True, 'exc': ''})
         except MyUser.DoesNotExist:
             return JsonResponse({'success': False, 'exc': '用户不存在'})
@@ -106,7 +106,7 @@ def invite_members(request):
 def disband(request):
     # POST(json)
     # 发送：
-    # -Team_id：整型，表示要解散的团队id
+    # -team_id：整型，表示要解散的团队id
     #
     # 收到：
     # -success：布尔值，表示是否成功
@@ -117,12 +117,12 @@ def disband(request):
     if not isleader(request):
         return JsonResponse({'success': False, 'exc': '您无权解散团队'})
     try:
-        team = Team.objects.get(t_id=data['Team_id'])
+        team = Team.objects.get(t_id=data['team_id'])
     except Team.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '团队不存在'})
     # 团队下的文件外键设为null
     # 文件权限还要调整吗
-    qs = File.objects.filter(t_id=data['Team_id'])
+    qs = File.objects.filter(t_id=data['team_id'])
     filelist = list(qs.values('f_id', 't_id'))
     # returnlist = []
     if filelist is not None:
@@ -142,9 +142,9 @@ def disband(request):
 def deal_with_application(request):
     # POST(json)
     # 发送：
-    # Team_id：表示用户正申请加入的团队
-    # User_id：表示申请者
-    # Accepted: 布尔值，表示创建者是否通过申请
+    # team_id：表示用户正申请加入的团队
+    # user_id：表示申请者
+    # accepted: 布尔值，表示创建者是否通过申请
     #
     # 收到：
     # -success：布尔值，表示是否成功
@@ -156,11 +156,11 @@ def deal_with_application(request):
     data = simplejson.loads(request.body)
 
     try:
-        record = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['User_id'])
+        record = TeamMember.objects.get(t_id=data['team_id'], u_id=data['user_id'])
     except TeamMember.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '申请不存在'})
 
-    if data['Accepted']:
+    if data['accepted']:
         record.status = 2
         record.save()
         return JsonResponse({'success': True, 'exc': ''})
@@ -174,10 +174,10 @@ def members_in_team(request):
     # POST(json)
     #
     # 发送：
-    # -Team_id：整型，表示查询的团队id
+    # -team_id：整型，表示查询的团队id
     #
     # 接收：
-    # -Member_list: [{User_id, User_avatar, User_name, User_status}, ...]：数组，其中每个元素为
+    # -member_list: [{User_id, User_avatar, User_name, User_status}, ...]：数组，其中每个元素为
     # {用户id，用户头像，用户名，用户身份（字符串，创建者为‘管理员’，其他为‘成员’）}，例如：[{123, ‘media / UserAvatar / 123.j
     # pg’, ’张三’, ‘管理员’}, {1234, ‘media / UserAvatar / 1234.j
     # pg’, ’李四’, ‘成员’}, …]
@@ -190,27 +190,27 @@ def members_in_team(request):
         team = Team.objects.get(t_id=data['Team_id'])
         leader = MyUser.objects.get(id=team.create_user.id)
         info = {
-            'User_id': leader.id,
-            'User_avatar': leader.u_avatar.url,
-            'User_name': leader.username,
-            'User_status': '管理员'
+            'user_id': leader.id,
+            'user_avatar': leader.u_avatar.url,
+            'user_name': leader.username,
+            'user_status': '管理员'
         }
         returnlist = []
         returnlist.append(info)
-        result = TeamMember.objects.filter(Q(t_id=data['Team_id']) & Q(status=2) & ~Q(u_id=leader.id))
+        result = TeamMember.objects.filter(Q(t_id=data['team_id']) & Q(status=2) & ~Q(u_id=leader.id))
         tmplist = list(result.values('u_id').distinct())
 
         if tmplist is not None:
             for member in tmplist:
                 myuser = MyUser.objects.get(id=member['u_id'])
                 info = {
-                    'User_id': myuser.id,
-                    'User_avatar': myuser.u_avatar.url,
-                    'User_name': myuser.username,
-                    'User_status': '成员'
+                    'user_id': myuser.id,
+                    'user_avatar': myuser.u_avatar.url,
+                    'user_name': myuser.username,
+                    'user_status': '成员'
                 }
                 returnlist.append(info)
-        return JsonResponse({'Member_list': returnlist, 'success': True, 'exc': ''})
+        return JsonResponse({'member_list': returnlist, 'success': True, 'exc': ''})
     except Team.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '团队不存在'})
 
@@ -218,8 +218,8 @@ def members_in_team(request):
 def remove_member(request):
     # POST(json)
     # 发送：
-    # -Team_id：整型，表示要删除队员的团队id
-    # -User_id：整型，表示被删除的队员id
+    # -team_id：整型，表示要删除队员的团队id
+    # -user_id：整型，表示被删除的队员id
     #
     # 收到：
     # -success：布尔值，表示是否成功
@@ -228,11 +228,11 @@ def remove_member(request):
     if not request.user.is_authenticated:
         return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
     try:
-        team = Team.objects.get(t_id=data['Team_id'])
+        team = Team.objects.get(t_id=data['team_id'])
     except Team.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '团队不存在'})
     try:
-        member = MyUser.objects.get(id=data['User_id'])
+        member = MyUser.objects.get(id=data['user_id'])
     except MyUser.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '用户不存在'})
     # 如果是队长，不能直接退出
@@ -240,7 +240,7 @@ def remove_member(request):
         return JsonResponse({'success': False, 'exc': '您是队长，无法直接退出团队'})
     # 如果是成员，可以退出
     try:
-        record = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['User_id'], status=2)
+        record = TeamMember.objects.get(t_id=data['team_id'], u_id=data['user_id'], status=2)
         record.delete()
         # 还要对文件操作吗
         return JsonResponse({'success': True, 'exc': ''})
@@ -251,23 +251,23 @@ def remove_member(request):
 def list_my_invitations(request):
     data = simplejson.loads(request.body)
     if not request.user.is_authenticated:
-        return JsonResponse({"Invitation_list": [], "success": False, "exc": "请先登录"})
-    result = TeamMember.objects.filter(Q(u_id__id__exact=data['User_id']) & Q(status__exact=1))
+        return JsonResponse({"invitation_list": [], "success": False, "exc": "请先登录"})
+    result = TeamMember.objects.filter(Q(u_id__id__exact=data['user_id']) & Q(status__exact=1))
     returnList = []
     for invitation in result:
-        temp = {"Team_name": invitation.t_id.t_name, "Team_id": invitation.t_id.t_id,
-                "User_name": invitation.inviter.username}
+        temp = {"team_name": invitation.t_id.t_name, "team_id": invitation.t_id.t_id,
+                "user_name": invitation.inviter.username}
         returnList.append(temp)
-    return JsonResponse({"Invitation_list": returnList, "success": True, "exc": ""})
+    return JsonResponse({"invitation_list": returnList, "success": True, "exc": ""})
 
 
 def list_applications(request):
     # POST(json)
     # 发送：
-    # -Team_id：整型，表示所查询的团队的id
+    # -team_id：整型，表示所查询的团队的id
     #
     # 收到：
-    # -User_list: [{User_id, User_avatar, User_name},…]
+    # -user_list: [{User_id, User_avatar, User_name},…]
     # 数组，其中每个元素为
     # {用户id，用户头像，用户名}，
     # 例如：[{123, ‘media / UserAvatar / 123.jpg’, ’张三’},
@@ -278,19 +278,19 @@ def list_applications(request):
     if not request.user.is_authenticated:
         return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
     try:
-        team = Team.objects.get(t_id=data['Team_id'])
+        team = Team.objects.get(t_id=data['team_id'])
     except Team.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '团队不存在'})
-    qs = TeamMember.objects.filter(Q(t_id=data['Team_id']) & Q(status=0))
+    qs = TeamMember.objects.filter(Q(t_id=data['team_id']) & Q(status=0))
     tmplist = list(qs.values('u_id'))
     returnlist = []
     if tmplist is not None:
         for record in tmplist:
             applicant = MyUser.objects.get(id=record['u_id'])
             tmp = {
-                'User_id': applicant.id,
-                'User_avatar': applicant.u_avatar.url,
-                'User_name': applicant.username
+                'user_id': applicant.id,
+                'user_avatar': applicant.u_avatar.url,
+                'user_name': applicant.username
             }
             returnlist.append(tmp)
-    return JsonResponse({'User_list': returnlist, 'success': True, 'exc': ''})
+    return JsonResponse({'user_list': returnlist, 'success': True, 'exc': ''})

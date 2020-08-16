@@ -195,25 +195,25 @@ def modify_password(request):
 def create_team(request):
     # POST(json)
     # 发送：
-    # User_id：整型，团队创建者id
-    # Team_name: 字符串，团队名称
+    # user_id：整型，团队创建者id
+    # team_name: 字符串，团队名称
     #
     # 收到：
-    # Team_id：整型，所创建的团队id（创建失败则无此项）
+    # team_id：整型，所创建的团队id（创建失败则无此项）
     # success：布尔值，表示是否成功
     # exc：字符串，表示错误信息，成功则为空
     data = simplejson.loads(request.body)
     if not request.user.is_authenticated:
         return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
     try:
-        myuser = MyUser.objects.get(id=data['User_id'])
+        myuser = MyUser.objects.get(id=data['user_id'])
         try:
-            team = Team.objects.get(t_name=data['Team_name'])
+            team = Team.objects.get(t_name=data['team_name'])
             return JsonResponse({'success': False, 'exc': '团队名称已被占用'})
         except Team.DoesNotExist:
-            record = Team.objects.create(t_name=data['Team_name'], create_user=myuser)
-            TeamMember.objects.create(t_id_id=record.t_id, u_id_id=data['User_id'], status=2)
-            return JsonResponse({'Team_id': record.t_id, 'success': True, 'exc': ''})
+            record = Team.objects.create(t_name=data['team_name'], create_user=myuser)
+            TeamMember.objects.create(t_id_id=record.t_id, u_id_id=data['user_id'], status=2)
+            return JsonResponse({'team_id': record.t_id, 'success': True, 'exc': ''})
 
     except MyUser.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '用户不存在'})
@@ -222,9 +222,9 @@ def create_team(request):
 def deal_with_invitation(request):
     # POST(json)
     # 发送：
-    # -User_id：整型，表示接受邀请的用户
-    # -Team_id：整型，表示接受邀请后进入的团队
-    # -Accepted：布尔值，表示是否接受邀请
+    # -user_id：整型，表示接受邀请的用户
+    # -team_id：整型，表示接受邀请后进入的团队
+    # -accepted：布尔值，表示是否接受邀请
     #
     # 收到：
     # -success：布尔值，表示是否成功
@@ -232,18 +232,18 @@ def deal_with_invitation(request):
     data = simplejson.loads(request.body)
     if request.user.is_authenticated:
         try:
-            invited_user = MyUser.objects.get(id=data['User_id'])
+            invited_user = MyUser.objects.get(id=data['user_id'])
         except MyUser.DoesNotExist:
             return JsonResponse({'success': False, 'exc': '用户不存在'})
 
         try:
-            team = Team.objects.get(t_id=data['Team_id'])
+            team = Team.objects.get(t_id=data['team_id'])
         except MyUser.DoesNotExist:
             return JsonResponse({'success': False, 'exc': '团队不存在'})
 
-        accepted = data['Accepted']
+        accepted = data['accepted']
         try:
-            record = TeamMember.objects.get(t_id__t_id=data['Team_id'], u_id__id=data['User_id'])
+            record = TeamMember.objects.get(t_id__t_id=data['team_id'], u_id__id=data['user_id'])
         except TeamMember.DoesNotExist:
             return JsonResponse({'success': False, 'exc': '邀请不存在'})
         if accepted:
@@ -261,8 +261,8 @@ def deal_with_invitation(request):
 def apply_to_join(request):
     # POST(json)
     # 发送：
-    # -Team_id：整型，表示申请加入的团队id
-    # -User_id：整型，表示申请加入的用户id
+    # -team_id：整型，表示申请加入的团队id
+    # -user_id：整型，表示申请加入的用户id
     #
     # 收到：
     # -success：布尔值，表示是否成功
@@ -272,17 +272,17 @@ def apply_to_join(request):
         return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
 
     try:
-        team = Team.objects.get(t_id=data['Team_id'])
+        team = Team.objects.get(t_id=data['team_id'])
     except Team.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '团队不存在'})
 
     try:
-        applicant = MyUser.objects.get(id=data['User_id'])
+        applicant = MyUser.objects.get(id=data['user_id'])
     except MyUser.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '用户不存在'})
 
     try:
-        record = TeamMember.objects.get(t_id=data['Team_id'], u_id=data['User_id'])
+        record = TeamMember.objects.get(t_id=data['team_id'], u_id=data['user_id'])
         status = record.status
 
         if status == 0:

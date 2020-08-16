@@ -306,7 +306,7 @@ def get_doc_edit_history(request):
 def delete_team_file(request):
     '''
     发送：
-    -file_id：整型，要删除的文件id
+    -doc_id：整型，要删除的文件id
     收到:
     -success：布尔值，表示是否成功
     -exc：字符串，表示错误信息，成功则为空
@@ -314,7 +314,7 @@ def delete_team_file(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": "false", "exc": "please login or register"})
 
-    file_id = request.POST.get('file_id')
+    file_id = request.POST.get('doc_id')
 
     try:
         file = File.objects.get(pk=file_id)
@@ -349,7 +349,7 @@ def list_all_team_docs(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": "false", "exc": "please login or register"})
 
-    team_id = request.POST.get('Team_id')
+    team_id = request.POST.get('team_id')
 
     try:
         team_member = TeamMember.objects.get(Q(t_id__t_id__exact=team_id) & Q(u_id__id__exact=request.user.id))
@@ -364,7 +364,7 @@ def list_all_team_docs(request):
                 'edit_time': file.f_etime,
             }
             res.append(temp)
-        return JsonResponse({"success": 'true', "exc": '', 'File_list': res})
+        return JsonResponse({"success": 'true', "exc": '', 'list': res})
     except Exception as e:
         return JsonResponse({"success": 'false', "exc": e.__str__})
 

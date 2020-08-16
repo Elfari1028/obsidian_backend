@@ -9,6 +9,7 @@ from . import views
 
 urlpatterns = [
     path('create_doc/', views.create_doc),
+    path('modify_title/', views.modify_title),
     path('put_into_recycle_bin/', views.put_into_recycle_bin),
     path('open_one_doc/', views.open_one_doc),
     path('close_doc/', views.close_doc),

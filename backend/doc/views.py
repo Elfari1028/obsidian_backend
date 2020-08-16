@@ -74,22 +74,39 @@ def create_doc(request):
     new_doc.u_id = request.user
     data = simplejson.loads(request.body)
     new_doc.f_title = data['title']
-    if data['template'] is not None:  # 存疑 前端发送-1吗
+    if data['template'] is not None:
         try:
             new_doc.f_content = Template.objects.get(tmplt_id__exact=data['template']).content
         except Template.DoesNotExist:
-            return JsonResponse({"success": False, "exc": "模板不存在", "file": -1})  # 存疑，创建失败返回什么
+            return JsonResponse({"success": False, "exc": "模板不存在", "file": -1})
     if data['team'] is not None:
         try:
             new_doc.t_id = Team.objects.get(t_id__exact=data['team'])
             set_permission(new_doc, data['team_auth'], 2)  # rank = 2 设置普通团队成员权限
         except Team.DoesNotExist:
             return JsonResponse({"success": False, "exc": "队伍不存在", "file": -1})
-    set_permission(new_doc, data['auth'], 3)  # rank = 3 设置其他人权限
     new_doc.f_status = True  # 作者获得锁
     new_doc.last_user = request.user
     new_doc.save()
     return JsonResponse({"success": True, "exc": "", "file": new_doc.f_id})
+
+
+def modify_title(request):
+    data = simplejson.loads(request.body)
+    try:
+        doc = File.objects.get(f_id__exact=data['doc_id'])
+        rank = get_identity(request.user, doc)  # 获得这个人对文档的权限
+        if rank > doc.is_editor:
+            return JsonResponse({"success": False, "exc": "没有编辑权限"})
+        if data['new_title'] == "":
+            return JsonResponse({"success": False, "exc": "标题不能为空"})
+        if len(data['new_title']) > 20:
+            return JsonResponse({"success": False, "exc": "标题不能长于20个字母"})
+        doc.f_title = data['new_title']
+        doc.save()
+        return JsonResponse({"success": True, "exc": ""})
+    except File.DoesNotExist:
+        return JsonResponse({"success": False, "exc": "文件不存在"})
 
 
 def upload_image(request):

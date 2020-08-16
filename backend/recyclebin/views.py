@@ -70,9 +70,9 @@ def get_private_deleted_file(request):
                 'delete_time': file.f_dtime
             }
             res.append(temp)
-        return JsonResponse({"success": 'true', "exec": '', 'list': res})
+        return JsonResponse({"success": 'true', "exc": '', 'list': res})
     except Exception as e:
-        return JsonResponse({"success": 'false', "exec": e.__str__})    
+        return JsonResponse({"success": 'false', "exc": e.__str__})    
 
 
 
@@ -91,11 +91,11 @@ def recover_file(request):
             file.trash_status = False
             file.f_dtime = None
             file.save()
-            return JsonResponse({"success": 'true', "exec": ""})
+            return JsonResponse({"success": 'true', "exc": ""})
         else:
-            return JsonResponse({"success": 'false', "exec": "没有操作权限。"})
+            return JsonResponse({"success": 'false', "exc": "没有操作权限。"})
     except Exception as e:
-        return JsonResponse({'success':'false', 'exec':e.__str__})
+        return JsonResponse({'success':'false', 'exc':e.__str__})
 
 @require_POST
 def delete_file(request):
@@ -108,8 +108,8 @@ def delete_file(request):
         file = File.objects.get(f_id = file_id)
         if get_identity(request.user, file) <= file.is_delete:
             file.delete()
-            JsonResponse({"success":"true", "exec":""})
+            JsonResponse({"success":"true", "exc":""})
         else:
-            return JsonResponse({"success":'false', 'exec':'当前用户没有删除权限。'})
+            return JsonResponse({"success":'false', 'exc':'当前用户没有删除权限。'})
     except Exception as e:
-        return JsonResponse({'success':'false', 'exec':e.__str__})
+        return JsonResponse({'success':'false', 'exc':e.__str__})

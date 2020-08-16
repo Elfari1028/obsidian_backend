@@ -164,15 +164,24 @@ class TeamMember(models.Model):
     status = models.IntegerField(default=1)
 
 
-# class Message(models.Model):
-#     # 消息ID
-#     m_id=models.AutoField(primary_key=True)
-#
-#     # 内容
-#     content=models.CharField(max_length=256)
-#
-#     # 发布时间
-#     create_time=models.DateTimeField(auto_now_add=True)
+class Message(models.Model):
+    # 消息ID
+    m_id=models.AutoField(primary_key=True)
+
+    # 发送用户
+    sender = models.ForeignKey(MyUser, on_delete=models.DO_NOTHING, related_name="msg_sender")
+
+    # 接收用户
+    receiver = models.ForeignKey(MyUser, on_delete=models.DO_NOTHING, related_name="msg_receiver")
+
+    # 内容
+    content=models.CharField(max_length=256)
+
+    # 发布时间
+    create_time=models.DateTimeField(auto_now_add=True)
+
+    # 是否已读，已读为1，否则为0
+    is_read = models.BooleanField(default=False)
 
 class BrowseRecords(models.Model):
     # 历史记录ID

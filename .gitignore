@@ -2,6 +2,6 @@
 backend/**/__pycache__/
 *.pyc
 
-backend/**/migrations/**
-!backend**/migrations
-!backend**/migrations/__init__.py
+# backend/**/migrations/**
+# !backend**/migrations
+# !backend**/migrations/__init__.py

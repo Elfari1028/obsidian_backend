@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.views.decorators.http import (require_GET, 
+from django.views.decorators.http import (require_GET,
                                           require_POST)
 from django.http import HttpResponse, JsonResponse
 from account.models import Comment, MyUser
@@ -7,8 +7,9 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from doc.views import get_identity
 from account.models import MyUser, File, Team, Template, TeamMember
-# Create your views here.
 
+
+# Create your views here.
 
 
 @require_POST
@@ -44,6 +45,7 @@ def get_team_deleted_file(request):
     except Exception as e:
         return JsonResponse({"success": 'false', "exc": e.__str__})
 
+
 @require_GET
 def get_private_deleted_file(request):
     """
@@ -72,8 +74,7 @@ def get_private_deleted_file(request):
             res.append(temp)
         return JsonResponse({"success": 'true', "exc": '', 'list': res})
     except Exception as e:
-        return JsonResponse({"success": 'false', "exc": e.__str__})    
-
+        return JsonResponse({"success": 'false', "exc": e.__str__})
 
 
 @require_POST
@@ -95,22 +96,48 @@ def recover_file(request):
         else:
             return JsonResponse({"success": 'false', "exc": "没有操作权限。"})
     except Exception as e:
-        return JsonResponse({'success':'false', 'exc':e.__str__})
+        return JsonResponse({'success': 'false', 'exc': e.__str__})
+
 
 @require_POST
 def delete_file(request):
     ''' by lighten'''
     if not request.user.is_authenticated:
         return JsonResponse({"success": 'false', "exc": "请先登录或注册。"})
-    
+
     file_id = request.POST.get('doc_id')
 
     try:
-        file = File.objects.get(f_id = file_id)
+        file = File.objects.get(f_id=file_id)
         if get_identity(request.user, file) <= file.is_delete:
             file.delete()
-            JsonResponse({"success":"true", "exc":""})
+            JsonResponse({"success": "true", "exc": ""})
         else:
-            return JsonResponse({"success":'false', 'exc':'当前用户没有删除权限。'})
+            return JsonResponse({"success": 'false', 'exc': '当前用户没有删除权限。'})
     except Exception as e:
-        return JsonResponse({'success':'false', 'exc':e.__str__})
+        return JsonResponse({'success': 'false', 'exc': e.__str__})
+
+
+def clear_all_docs(request):
+    # GET
+    # 彻底删除个人回收站内的所有文件
+    #
+    # 返回
+    # {
+    #     success: t / f
+    #     exc:
+    # }
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
+    userid = request.session.get('_auth_user_id')
+    try:
+        myuser = MyUser.objects.get(id=userid)
+    except MyUser.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': '用户不存在'})
+    qs = File.objects.filter(Q(u_id=userid) & Q(t_id=None) & Q(trash_status=False))
+    lst = list(qs.values('f_id'))
+    if lst is not None:
+        for record in lst:
+            file = File.objects.get(f_id=record['f_id'])
+            file.delete()
+    return JsonResponse({'success': True, 'exc': ''})

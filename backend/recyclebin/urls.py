@@ -7,4 +7,6 @@ urlpatterns = [
     path('get_private_docs', views.get_private_deleted_file),
     path('delete_doc/', views.delete_file),
     path('recover_doc/', views.recover_file),
+    path('clear_all_doc/', views.clear_all_doc)
+
 ]

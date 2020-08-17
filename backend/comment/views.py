@@ -3,6 +3,7 @@ from django.views.decorators.http import (require_GET,
                                           require_POST)
 from django.http import HttpResponse, JsonResponse
 from account.models import Comment, MyUser
+import simplejson
 from django.contrib.auth.decorators import login_required
 # Create your views here.
 
@@ -101,7 +102,6 @@ def reply_comment(request):
         reply_to = parent_comment.c_id
         # 将评论加入数据库
         comment = Comment.objects.create(u_id = request.user, f_id__f_id = file_id, pc_id = reply_to, content = content)
-
         return JsonResponse({'success':'true', 'exc':'', 'post_time':comment.create_time})
     
     # 对文档的之档回复

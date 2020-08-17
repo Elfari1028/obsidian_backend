@@ -228,40 +228,35 @@ def find_permission_in_one_group(request):
 @require_POST
 @login_required(login_url="/accounts/login1")
 def edit_permission(request):
-    '''
-    by lighten:  
-    编辑文档的权限。
+    ''' by lighten:  
+    发送包：
+        - doc_id: 正整形， 表示文档id
+        - auth: {
+            read: 布尔值，是否可以阅读
+            edit:布尔值，是否可以编辑
+            comment: 布尔值，是否可以评论
+        - team_auth:{
+            read:布尔值，是否可以阅读
+            edit:布尔值，是否可以编辑
+            comment:布尔值，是否可以评论
+            share: 布尔值，是否可以分享
+    返回包：
+        - success: 布尔值 true/false
+        - exc: 字符串，错误信息
     '''
     if not request.user.is_authenticated:
         return JsonResponse({"success": "false", "exc": "请先登录或注册。"})
-    try:
-        data = simplejson.loads(request.body)
-        file_id = data['doc_id']
-        is_read = data['read']
-        is_write = data['write']
-        is_comment = data['comment']
-    except Exception:
-        return JsonResponse({'success': False, "exc": "请求格式错误。"})
+
+    data = simplejson.loads(request.body)
+    other_auth = data["auth"]
+    team_auth = data["team_auth"]
 
     file = File.objects.get(f_id=file_id)
     if get_identity(request.user, file) != 1:
         return JsonResponse({"success": False, "exc": "没有权限编辑当前文档权限。"})
     else:
-        flag = 1 if file.t_id > 0 else 2
-        # 读
-        file.is_read = 3 if is_read == 'true' else flag
-
-        # 写
-        file.is_write = 3 if is_write == 'true' else flag
-
-        # 评论
-        file.is_comment = 3 if is_comment == 'true' else flag
-
-        # 分享
-        '''
-        file.is_share = 3 if is_share == 'true' else flag
-        '''
-
+        set_permission(file, team_auth, 2)
+        set_permission(file, other_auth, 3)
         file.save()
         return JsonResponse({"success": "true", "exc": ""})
 
@@ -291,7 +286,7 @@ def get_doc_edit_history(request):
             data = simplejson.loads(request.body)
             file_id = data['doc_id']
         except Exception:
-            return JsonResponse({'success': False, 'exc': "请求格式错误。"})
+            return JsonResponse({'success':False, 'exc':"请求格式错误。"})
         file = File.objects.get(f_id=file_id)
 
         # 显然只有拥有读权限的用户可以查看编辑历史
@@ -328,7 +323,7 @@ def delete_team_file(request):
         data = simplejson.loads(request.body)
         file_id = data['doc_id']
     except Exception:
-        return JsonResponse({'success': False, 'exc': "请求格式错误。"})
+        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
 
     try:
         file = File.objects.get(pk=file_id)
@@ -367,7 +362,7 @@ def list_all_team_docs(request):
         data = simplejson.loads(request.body)
         team_id = data['team_id']
     except Exception:
-        return JsonResponse({'success': False, 'exc': "请求格式错误。"})
+        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
 
     try:
         team_member = TeamMember.objects.get(Q(t_id__t_id__exact=team_id) & Q(u_id__id__exact=request.user.id))

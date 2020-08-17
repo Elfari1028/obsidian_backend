@@ -26,5 +26,6 @@ urlpatterns = [
     path('comment/', include('comment.urls')),
     path('bin/', include('recyclebin.urls')),
     path('favorite/', include('favorite.urls')),
+    path('message/', include('message.urls')),
     re_path('media/(?P<path>.*)$',  serve, {"document_root": settings.MEDIA_ROOT}),
 ]

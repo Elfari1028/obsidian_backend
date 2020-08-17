@@ -69,7 +69,7 @@ def generate_permission_dic(instance, identity):
 
 def create_doc(request):
     if not request.user.is_authenticated:
-        return JsonResponse({"success": False, "exc": "请先登录", "file": -1})
+        return JsonResponse({"success": False, "exc": "请先登录", "doc": -1})
     new_doc = File()
     new_doc.u_id = request.user
     data = simplejson.loads(request.body)
@@ -78,23 +78,22 @@ def create_doc(request):
         try:
             new_doc.f_content = Template.objects.get(tmplt_id__exact=data['template']).content
         except Template.DoesNotExist:
-            return JsonResponse({"success": False, "exc": "模板不存在", "file": -1})
+            return JsonResponse({"success": False, "exc": "模板不存在", "doc": -1})
     if data['team'] is not None:
         try:
             new_doc.t_id = Team.objects.get(t_id__exact=data['team'])
             set_permission(new_doc, data['team_auth'], 2)  # rank = 2 设置普通团队成员权限
         except Team.DoesNotExist:
-            return JsonResponse({"success": False, "exc": "队伍不存在", "file": -1})
+            return JsonResponse({"success": False, "exc": "队伍不存在", "doc": -1})
     new_doc.last_user = request.user
     new_doc.f_etime = datetime.now()
     new_doc.save()
-    return JsonResponse({"success": True, "exc": "", "file": new_doc.f_id})
+    return JsonResponse({"success": True, "exc": "", "doc": new_doc.f_id})
 
 
 def upload_image(request):
     try:
-        data = simplejson.loads(request.body)
-        doc_id = data['doc_id']
+        doc_id = request.POST['doc_id']
     except Exception:
         return JsonResponse({'success': False, 'exc': "请求格式错误。"})
     # doc_id = request.POST.get('doc_id')
@@ -250,8 +249,9 @@ def edit_permission(request):
     data = simplejson.loads(request.body)
     other_auth = data["auth"]
     team_auth = data["team_auth"]
-
-    file = File.objects.get(f_id=file_id)
+    doc_id = data["doc_id"]
+    print(data)
+    file = File.objects.get(f_id=doc_id)
     if get_identity(request.user, file) != 1:
         return JsonResponse({"success": False, "exc": "没有权限编辑当前文档权限。"})
     else:

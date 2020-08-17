@@ -12,6 +12,7 @@ urlpatterns = [
     path('modify_title/', views.modify_title),
     path('put_into_recycle_bin/', views.put_into_recycle_bin),
     path('open_one_doc/', views.open_one_doc),
+    path('refresh_doc/', views.refresh_doc),
     path('close_doc/', views.close_doc),
     path('auto_save_doc/', views.auto_save_doc),
     path('list_all_my_docs/', views.list_all_my_docs),

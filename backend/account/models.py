@@ -74,7 +74,7 @@ class File(models.Model):
     f_ctime = models.DateTimeField(auto_now_add=True)
 
     # 最后编辑时间（每次保存时生成）
-    f_etime = models.DateTimeField(auto_now=True)
+    f_etime = models.DateTimeField(null=True)
 
     # 编辑次数
     f_ecount = models.IntegerField(default=0)

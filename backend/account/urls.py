@@ -14,6 +14,7 @@ urlpatterns = [
     path('my_status/', views.my_status),
     path('modify_information/', views.modify_information),
     path('get_information/', views.get_information),
+    path('get_public_information/', views.get_public_information),
     path('upload_avatar/', views.upload_avatar),
     path('get_avatar/', views.get_avatar),
     path('modify_password/', views.modify_password),

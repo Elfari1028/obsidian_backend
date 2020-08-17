@@ -112,14 +112,29 @@ def my_status(request):
 def get_information(request):
     if request.user.is_authenticated:
         return JsonResponse({"success": True, "exc": "", "username": request.user.username, "email": request.user.email,
-                             "sex": 2 if request.user.u_sex is None else request.user.u_sex,
+                             "sex": -1 if request.user.u_sex is None else request.user.u_sex,
                              "mood": "" if request.user.u_intro is None else request.user.u_intro,
                              "tel": "" if request.user.u_tel is None else request.user.u_tel,
-                             "age": -1 if request.user.u_intro is None else request.user.u_intro})
+                             "age": -1 if request.user.u_age is None else request.user.u_age})
     else:
         # 暂定没登录时返回-1
         return JsonResponse({"success": False, "exc": "请先登录", "username": "", "email": "",
-                             "sex": 2, "mood": "", "tel": "", "age": -1})
+                             "sex": -1, "mood": "", "tel": "", "age": -1})
+
+
+def get_public_information(request):
+    data = simplejson.loads(request.body)
+    try:
+        person = MyUser.objects.get(username__exact=data['username'])
+        return JsonResponse({"success": True, "exc": "", "username": person.username, "email": person.email,
+                             "sex": -1 if person.u_sex is None else person.u_sex,
+                             "mood": "" if person.u_intro is None else person.u_intro,
+                             "tel": "" if person.u_tel is None else person.u_tel,
+                             "age": -1 if person.u_age is None else person.u_age,
+                             "url": person.u_avatar.url})
+    except MyUser.DoesNotExist:
+        return JsonResponse({"success": False, "exc": "用户不存在", "username": "", "email": "",
+                             "sex": -1, "mood": "", "tel": "", "age": -1, "url": ""})
 
 
 def modify_information(request):

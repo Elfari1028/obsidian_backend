@@ -266,7 +266,7 @@ def apply_to_join(request):
     # 收到：
     # -success：布尔值，表示是否成功
     # -exc：字符串，表示错误信息，成功则为空
-    data = simplejson.loads(request.loads)
+    data = simplejson.loads(request.body)
     if not request.user.is_authenticated:
         return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
 

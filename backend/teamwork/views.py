@@ -16,7 +16,7 @@ def isleader(request):
     # request中必须包含'team_id'字段
     userid = request.session.get('_auth_user_id')
     data = simplejson.loads(request.body)
-    team = Team.objects.get(t_id=data['Team_id'])
+    team = Team.objects.get(t_id=data['team_id'])
     if userid == str(team.create_user.id):
         return True
     else:
@@ -187,7 +187,7 @@ def members_in_team(request):
     if not request.user.is_authenticated:
         return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
     try:
-        team = Team.objects.get(t_id=data['Team_id'])
+        team = Team.objects.get(t_id=data['team_id'])
         leader = MyUser.objects.get(id=team.create_user.id)
         info = {
             'user_id': leader.id,

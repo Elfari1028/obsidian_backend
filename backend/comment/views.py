@@ -63,7 +63,7 @@ def get_comments(request):
         res.append(temp)
 
     return JsonResponse({
-        'success': 'true',
+        'success': True,
         'exc': '',
         'comments': res
     })
@@ -102,11 +102,11 @@ def reply_comment(request):
         reply_to = parent_comment.c_id
         # 将评论加入数据库
         comment = Comment.objects.create(u_id = request.user, f_id__f_id = file_id, pc_id = reply_to, content = content)
-        return JsonResponse({'success':'true', 'exc':'', 'post_time':comment.create_time})
+        return JsonResponse({'success':True, 'exc':'', 'post_time':comment.create_time})
     
     # 对文档的之档回复
     else:
         # 将评论加入数据库
         comment = Comment.objects.create(u_id = request.user, f_id__f_ic = file_id, pc_id = reply_to, content = content)
 
-        return JsonResponse({'success':'true', 'exc':'', 'post_time':comment.create_time})
+        return JsonResponse({'success':True, 'exc':'', 'post_time':comment.create_time})

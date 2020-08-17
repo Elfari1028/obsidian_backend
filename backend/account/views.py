@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 import simplejson
 import re
 from django.contrib.auth.backends import ModelBackend
+from . import cryptoUtil
 
 
 class CustomBackend(ModelBackend):
@@ -60,23 +61,26 @@ def username_used(request):
 
 def register1(request):
     data = simplejson.loads(request.body)
-    userName = data['username']
-    password = data['password']
-    email = data['email']
+    key = data['key']
+    username = cryptoUtil.DeAesCrypt(data['username'], key, 'zero').decrypt_aes
+    password = cryptoUtil.DeAesCrypt(data['password'], key, 'zero').decrypt_aes
+    email = cryptoUtil.DeAesCrypt(data['email'], key, 'zero').decrypt_aes
     if not mail_check(email):
         return JsonResponse({"success": False, "exc": "电子邮箱非法"})
-    try:
-        user = MyUser.objects.create_user(userName, email, password)
-        user.save()
-        return JsonResponse({"success": True, "exc": ""})
-    except IntegrityError as e:
-        return JsonResponse({"success": False, "exc": e.__str__()})
+    if search_email(email):
+        return JsonResponse({"success": False, "exc": "此邮箱已被使用"})
+    if search_username(username):
+        return JsonResponse({"success": False, "exc": "此用户名已被使用"})
+    user = MyUser.objects.create_user(username, email, password)
+    user.save()
+    return JsonResponse({"success": True, "exc": ""})
 
 
 def login1(request):
     data = simplejson.loads(request.body)
-    userName = data['email']
-    password = data['password']
+    key = data['key']
+    username = cryptoUtil.DeAesCrypt(data['email'], key, 'zero').decrypt_aes
+    password = cryptoUtil.DeAesCrypt(data['password'], key, 'zero').decrypt_aes
 
     if request.user.is_authenticated:
         # 方法1 如果登录了则要求注销后再登录
@@ -84,7 +88,7 @@ def login1(request):
         # 方法2 自动注销上一次登录，然后进行本次登录
         # logout(request)
     authentication = CustomBackend()
-    user = authentication.authenticate(request, username=userName, password=password)
+    user = authentication.authenticate(request, username=username, password=password)
     if user is not None:
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         login(request, user)
@@ -126,12 +130,9 @@ def modify_information(request):
         return JsonResponse({"success": False, "exc": "用户名已被占用"})
     if search_email(data['email']) and data['email'] != request.user.email:
         return JsonResponse({"success": False, "exc": "此电子邮箱已用过"})
-    if data['password'] == "":
-        return JsonResponse({"success": False, "exc": "密码不能为空"})
     user = request.user
     user.username = data['username']
     user.email = data['email']
-    user.set_password(data['password'])
     user.u_sex = data['sex']
     user.u_age = data['age']
     user.u_intro = data['mood']
@@ -175,16 +176,14 @@ def modify_username(request):
 
 def modify_password(request):
     data = simplejson.loads(request.body)
-    old_pwd = data['old_password']
+    key = data['key']
+    old_pwd = cryptoUtil.DeAesCrypt(data['old_password'], key, 'zero').decrypt_aes
+    new_pwd = cryptoUtil.DeAesCrypt(data['new_password'], key, 'zero').decrypt_aes
     user = request.user
     if user.check_password(old_pwd):
-        new_pwd1 = data['new_password1']
-        new_pwd2 = data['new_password2']
-        if new_pwd1 == "" or new_pwd2 == "":
+        if new_pwd == "":
             return JsonResponse({"success": False, "exc": "密码不能为空"})
-        if new_pwd1 != new_pwd2:
-            return JsonResponse({"success": False, "exc": "两次密码应该相同"})
-        user.set_password(new_pwd1)
+        user.set_password(new_pwd)
         user.save()
         update_session_auth_hash(request, user)
         return JsonResponse({"success": True, "exc": ""})

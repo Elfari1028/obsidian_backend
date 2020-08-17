@@ -1,12 +1,12 @@
+import simplejson
 from django.shortcuts import render
 from django.views.decorators.http import (require_GET,
                                           require_POST)
 from django.http import HttpResponse, JsonResponse
-from account.models import Comment, MyUser
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from doc.views import get_identity
-from account.models import MyUser, File, Team, Template, TeamMember
+from account.models import Comment, MyUser, File, Team, Template, TeamMember
 
 
 # Create your views here.
@@ -117,7 +117,7 @@ def delete_file(request):
         data = simplejson.loads(request.body)
         file_id = data['doc_id']
     except Exception:
-        return JsonResponse({'success':False, 'exc':"请求格式错误。"}))
+        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
 
     try:
         file = File.objects.get(f_id=file_id)

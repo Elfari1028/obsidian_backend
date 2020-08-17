@@ -23,7 +23,7 @@ urlpatterns = [
     path('get_recent_read/', views.get_recent_read),
 
 
-    path('list_all_templates/',views.list_all_templates),
-    path('create_templates/',views.create_templates)
+    path('list_all_templates/', views.list_all_templates),
+    path('create_templates/', views.create_templates)
 
 ]

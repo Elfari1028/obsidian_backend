@@ -32,7 +32,8 @@ def get_comments(request):
         username
         avatar
     '''
-    file_id = request.POST.get('doc_id')
+    data = simplejson.loads(request.body)
+    file_id = data['doc_id']
     main_comments = Comment.objects.filter(f_id = file_id, pc_id = 0).order_by('-create_time')
     res = []
     for main_comment in main_comments:
@@ -81,11 +82,15 @@ def reply_comment(request):
     if not request.user.is_authenticated:
         return JsonResponse({'success':'false', 'exc':'user infomation error', 'post_time':''})
 
-    u_id = request.user.id
-    content = request.POST.get('content')
-    file_id = request.POST.get('doc_id')
-    reply_to = request.POST.get('reply_to',0)
+    try:
+        data = simplejson.loads(request.body)
 
+        u_id = request.user.id
+        content = data['content']
+        file_id = data['doc_id']
+        reply_to = data['reply_to']
+    except Exception:
+        return JsonResponse({"success":False, 'exc':"请求格式错误。"})
     # 回复他人的回复
     if reply_to != 0:
         parent_comment = Comment.objects.get(c_id=reply_to)

@@ -25,7 +25,11 @@ def get_team_deleted_file(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": 'false', "exc": "请先登录或注册。"})
 
-    team_id = request.POST.get('team_id')
+    try:
+        data = simplejson.loads(request.body)
+        team_id = data['team_id']
+    except Exception:
+        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
 
     try:
         team_member = TeamMember.objects.get(Q(t_id__t_id__exact=team_id) & Q(u_id__id__exact=request.user.id))
@@ -83,8 +87,12 @@ def recover_file(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": 'false', "exc": "请先登录或注册。"})
 
-    doc_id = request.POST.get('doc_id')
-    team_id = request.POST.get('team_id')
+    try:
+        data = simplejson.loads(request.body)
+        doc_id = data['doc_id']
+        team_id = data['team_id']
+    except Exception:
+        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
 
     try:
         file = File.objects.get(f_id=doc_id)
@@ -104,8 +112,12 @@ def delete_file(request):
     ''' by lighten'''
     if not request.user.is_authenticated:
         return JsonResponse({"success": 'false', "exc": "请先登录或注册。"})
-
-    file_id = request.POST.get('doc_id')
+    
+    try:
+        data = simplejson.loads(request.body)
+        file_id = data['doc_id']
+    except Exception:
+        return JsonResponse({'success':False, 'exc':"请求格式错误。"}))
 
     try:
         file = File.objects.get(f_id=file_id)

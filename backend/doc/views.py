@@ -110,7 +110,12 @@ def modify_title(request):
 
 
 def upload_image(request):
-    doc_id = request.POST.get('doc_id')
+    try:
+        data = simplejson.loads(request.body)
+        doc_id = data['doc_id']
+    except Exception:
+        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
+    # doc_id = request.POST.get('doc_id')
     try:
         file = File.objects.get(f_id__exact=doc_id)
         rank = get_identity(request.user, file)  # 获得这个人对文档的权限
@@ -236,15 +241,18 @@ def edit_permission(request):
     '''
     if not request.user.is_authenticated:
         return JsonResponse({"success": "false", "exc": "请先登录或注册。"})
-
-    file_id = request.POST.get('doc_id')
-    is_read = request.POST.get('read')
-    is_write = request.POST.get('write')
-    is_comment = request.POST.get('comment')
+    try:
+        data = simplejson.loads(request.body)
+        file_id = data['doc_id']
+        is_read = data['read']
+        is_write = data['write']
+        is_comment = data['comment']
+    except Exception:
+        return JsonResponse({'success':False, "exc":"请求格式错误。"})
 
     file = File.objects.get(f_id=file_id)
     if get_identity(request.user, file) != 1:
-        return JsonResponse({"success": "false", "exc": "没有权限编辑当前文档权限。"})
+        return JsonResponse({"success": False, "exc": "没有权限编辑当前文档权限。"})
     else:
         flag = 1 if file.t_id>0 else 2
         # 读
@@ -286,7 +294,11 @@ def get_doc_edit_history(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": "false", "exc": "请先登录或注册。", 'history': ''})
     else:
-        file_id = request.POST.get('doc_id')
+        try:
+            data = simplejson.loads(request.body)
+            file_id = data['doc_id']
+        except Exception:
+            return JsonResponse({'success':False, 'exc':"请求格式错误。"})
         file = File.objects.get(f_id=file_id)
 
         # 显然只有拥有读权限的用户可以查看编辑历史
@@ -319,7 +331,11 @@ def delete_team_file(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": "false", "exc": "please login or register"})
 
-    file_id = request.POST.get('doc_id')
+    try:
+        data = simplejson.loads(request.body)
+        file_id = data['doc_id']
+    except Exception:
+        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
 
     try:
         file = File.objects.get(pk=file_id)
@@ -354,7 +370,11 @@ def list_all_team_docs(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": "false", "exc": "please login or register"})
 
-    team_id = request.POST.get('team_id')
+    try:
+        data = simplejson.loads(request.body)
+        team_id = data['team_id']
+    except Exception:
+        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
 
     try:
         team_member = TeamMember.objects.get(Q(t_id__t_id__exact=team_id) & Q(u_id__id__exact=request.user.id))

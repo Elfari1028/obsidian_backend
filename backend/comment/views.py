@@ -3,6 +3,7 @@ from django.views.decorators.http import (require_GET,
                                           require_POST)
 from django.http import HttpResponse, JsonResponse
 from account.models import Comment, MyUser
+from message.views import add_message
 import simplejson
 from django.contrib.auth.decorators import login_required
 # Create your views here.
@@ -81,7 +82,7 @@ def reply_comment(request):
         - post_time： 发布时间
     '''
     if not request.user.is_authenticated:
-        return JsonResponse({'success':'false', 'exc':'user infomation error', 'post_time':''})
+        return JsonResponse({'success':False, 'exc':'user infomation error', 'post_time':''})
 
     try:
         data = simplejson.loads(request.body)
@@ -90,6 +91,7 @@ def reply_comment(request):
         content = data['content']
         file_id = data['doc_id']
         reply_to = data['reply_to']
+        file = File.objects.get(f_id = file_id)
     except Exception:
         return JsonResponse({"success":False, 'exc':"请求格式错误。"})
     # 回复他人的回复
@@ -102,11 +104,13 @@ def reply_comment(request):
         reply_to = parent_comment.c_id
         # 将评论加入数据库
         comment = Comment.objects.create(u_id = request.user, f_id__f_id = file_id, pc_id = reply_to, content = content)
+        add_message(sender=request.user, receiver=file.u_id, m=1 ,team=None)
+
         return JsonResponse({'success':True, 'exc':'', 'post_time':comment.create_time})
     
     # 对文档的之档回复
     else:
         # 将评论加入数据库
         comment = Comment.objects.create(u_id = request.user, f_id__f_ic = file_id, pc_id = reply_to, content = content)
-
+        add_message(sender=request.user, receiver=file.u_id, m=1 ,team=None)
         return JsonResponse({'success':True, 'exc':'', 'post_time':comment.create_time})

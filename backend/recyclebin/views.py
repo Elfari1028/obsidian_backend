@@ -22,7 +22,7 @@ def get_team_deleted_file(request):
     -exc：字符串，表示错误信息，成功则为空
     """
     if not request.user.is_authenticated:
-        return JsonResponse({"success": 'false', "exc": "please login or register"})
+        return JsonResponse({"success": 'false', "exc": "请先登录或注册。"})
 
     team_id = request.POST.get('team_id')
 
@@ -40,7 +40,7 @@ def get_team_deleted_file(request):
                 'delete_time': file.f_dtime
             }
             res.append(temp)
-        return JsonResponse({"success": 'true', "exc": '', 'File_list': res})
+        return JsonResponse({"success": 'true', "exc": '', 'doc_list': res})
     except Exception as e:
         return JsonResponse({"success": 'false', "exc": e.__str__})
 
@@ -70,9 +70,9 @@ def get_private_deleted_file(request):
                 'delete_time': file.f_dtime
             }
             res.append(temp)
-        return JsonResponse({"success": 'true', "exec": '', 'list': res})
+        return JsonResponse({"success": 'true', "exc": '', 'list': res})
     except Exception as e:
-        return JsonResponse({"success": 'false', "exec": e.__str__})    
+        return JsonResponse({"success": 'false', "exc": e.__str__})    
 
 
 
@@ -80,7 +80,7 @@ def get_private_deleted_file(request):
 def recover_file(request):
     '''by lighten'''
     if not request.user.is_authenticated:
-        return JsonResponse({"success": 'false', "exc": "please login or register"})
+        return JsonResponse({"success": 'false', "exc": "请先登录或注册。"})
 
     doc_id = request.POST.get('doc_id')
     team_id = request.POST.get('team_id')
@@ -91,16 +91,17 @@ def recover_file(request):
             file.trash_status = False
             file.f_dtime = None
             file.save()
-            return JsonResponse({"success": 'true', "exec": ""})
+            return JsonResponse({"success": 'true', "exc": ""})
         else:
-            return JsonResponse({"success": 'false', "exec": "没有操作权限。"})
+            return JsonResponse({"success": 'false', "exc": "没有操作权限。"})
     except Exception as e:
-        return JsonResponse({'success':'false', 'exec':e.__str__})
+        return JsonResponse({'success':'false', 'exc':e.__str__})
 
 @require_POST
 def delete_file(request):
+    ''' by lighten'''
     if not request.user.is_authenticated:
-        return JsonResponse({"success": 'false', "exc": "please login or register"})
+        return JsonResponse({"success": 'false', "exc": "请先登录或注册。"})
     
     file_id = request.POST.get('doc_id')
 
@@ -108,8 +109,8 @@ def delete_file(request):
         file = File.objects.get(f_id = file_id)
         if get_identity(request.user, file) <= file.is_delete:
             file.delete()
-            JsonResponse({"success":"true", "exec":""})
+            JsonResponse({"success":"true", "exc":""})
         else:
-            return JsonResponse({"success":'false', 'exec':'当前用户没有删除权限。'})
+            return JsonResponse({"success":'false', 'exc':'当前用户没有删除权限。'})
     except Exception as e:
-        return JsonResponse({'success':'false', 'exec':e.__str__})
+        return JsonResponse({'success':'false', 'exc':e.__str__})

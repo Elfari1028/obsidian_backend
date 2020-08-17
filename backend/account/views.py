@@ -66,7 +66,6 @@ def register1(request):
     if not mail_check(email):
         return JsonResponse({"success": False, "exc": "电子邮箱非法"})
     try:
-        #  dic = {'u_tel': data['u_tel'], 'u_intro': data['u_intro'], 'u_sex': data['u_sex'], 'u_age': data['u_age']}
         user = MyUser.objects.create_user(userName, email, password)
         user.save()
         return JsonResponse({"success": True, "exc": ""})
@@ -100,10 +99,10 @@ def logout1(request):
 
 def my_status(request):
     if request.user.is_authenticated:
-        return JsonResponse({"username": request.user.username, "User_id": request.user.id, "success": True, "exc": ""})
+        return JsonResponse({"username": request.user.username, "user_id": request.user.id, "success": True, "exc": ""})
     else:
         # 暂定没登录时返回-1
-        return JsonResponse({"username": "", "User_id": -1, "success": False, "exc": "请先登录"})
+        return JsonResponse({"username": "", "user_id": -1, "success": False, "exc": "请先登录"})
 
 
 def get_information(request):
@@ -121,7 +120,7 @@ def get_information(request):
 
 def modify_information(request):
     if not request.user.is_authenticated:
-        return JsonResponse({"success": False, "exc": "请先登录", "list": []})
+        return JsonResponse({"success": False, "exc": "请先登录"})
     data = simplejson.loads(request.body)
     if search_username(data['username']) and data['username'] != request.user.username:
         return JsonResponse({"success": False, "exc": "用户名已被占用"})
@@ -131,7 +130,7 @@ def modify_information(request):
         return JsonResponse({"success": False, "exc": "密码不能为空"})
     user = request.user
     user.username = data['username']
-    user.email = data['eamil']
+    user.email = data['email']
     user.set_password(data['password'])
     user.u_sex = data['sex']
     user.u_age = data['age']
@@ -304,20 +303,20 @@ def apply_to_join(request):
 def get_identity_in_team(request):
     data = simplejson.loads(request.body)
     try:
-        team = Team.objects.get(t_id__exact=data['Team_id'])
-        user = MyUser.objects.get(id__exact=data['User_id'])
+        team = Team.objects.get(t_id__exact=data['team_id'])
+        user = MyUser.objects.get(id__exact=data['user_id'])
     except Team.DoesNotExist:
-        return JsonResponse({"User_status": -1, "success": False, "exc": "队伍不存在"})
+        return JsonResponse({"user_status": -1, "success": False, "exc": "队伍不存在"})
     except MyUser.DoesNotExist:
-        return JsonResponse({"User_status": -1, "success": False, "exc": "用户不存在"})
-    teamMember = TeamMember.objects.filter(Q(t_id__t_id__exact=data['Team_id'])
-                                           & Q(u_id__id__exact=data['User_id']) & Q(status__exact=2)).first()
+        return JsonResponse({"user_status": -1, "success": False, "exc": "用户不存在"})
+    teamMember = TeamMember.objects.filter(Q(t_id__t_id__exact=data['team_id'])
+                                           & Q(u_id__id__exact=data['user_id']) & Q(status__exact=2)).first()
     if teamMember is None:
-        return JsonResponse({"User_status": 2, "success": True, "exc": ""})
-    if teamMember.t_id.create_user.id == data['User_id']:
-        return JsonResponse({"User_status": 0, "success": True, "exc": ""})
+        return JsonResponse({"user_status": 2, "success": True, "exc": ""})
+    if teamMember.t_id.create_user.id == data['user_id']:
+        return JsonResponse({"user_status": 0, "success": True, "exc": ""})
     else:
-        return JsonResponse({"User_status": 1, "success": True, "exc": ""})
+        return JsonResponse({"user_status": 1, "success": True, "exc": ""})
 
 
 def get_my_teams(request):

@@ -31,12 +31,6 @@ def get_comments(request):
         create_time
         username
         avatar
-      },
-      {
-
-      },
-      ...
-    }
     '''
     file_id = request.POST.get('doc_id')
     main_comments = Comment.objects.filter(f_id = file_id, pc_id = 0).order_by('-create_time')
@@ -46,6 +40,7 @@ def get_comments(request):
         reply_res = []
         for reply_comment in reply_comments:
             reply_temp = {
+                "com_id": reply_comment.c_id,
                 'username': reply_comment.u_id.username, 
                 'user_id':  reply_comment.u_id.id, 
                 'avatar': reply_comment.u_id.avatar.url,
@@ -55,6 +50,7 @@ def get_comments(request):
             reply_res.append(reply_temp)
         
         temp = {
+            'com_id': main_comment.c_id,
             'username': main_comment.u_id.username, 
             'user_id':  main_comment.u_id.id, 
             'avatar': main_comment.u_id.avatar.url,
@@ -86,7 +82,7 @@ def reply_comment(request):
         return JsonResponse({'success':'false', 'exc':'user infomation error', 'post_time':''})
 
     u_id = request.user.id
-    content = request.POST.get('')
+    content = request.POST.get('content')
     file_id = request.POST.get('doc_id')
     reply_to = request.POST.get('reply_to',0)
 
@@ -99,13 +95,13 @@ def reply_comment(request):
             parent_comment = Comment.objects.get(c_id=parent_comment.c_id)
         reply_to = parent_comment.c_id
         # 将评论加入数据库
-        comment = Comment.objects.create(u_id = request.user, f_id = file_id, pc_id = reply_to, content = content)
+        comment = Comment.objects.create(u_id = request.user, f_id__f_id = file_id, pc_id = reply_to, content = content)
 
         return JsonResponse({'success':'true', 'exc':'', 'post_time':comment.create_time})
     
     # 对文档的之档回复
     else:
         # 将评论加入数据库
-        comment = Comment.objects.create(u_id = request.user, f_id = file_id, pc_id = reply_to, content = content)
+        comment = Comment.objects.create(u_id = request.user, f_id__f_ic = file_id, pc_id = reply_to, content = content)
 
         return JsonResponse({'success':'true', 'exc':'', 'post_time':comment.create_time})

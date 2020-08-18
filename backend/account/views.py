@@ -337,9 +337,10 @@ def get_my_teams(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先登录", "list": []})
     result = TeamMember.objects.filter(Q(u_id__id__exact=request.user.id)
-                                       & Q(status__exact=2)).order_by('t_id_id').distinct()
+                                       & Q(status__exact=2)).values('t_id').distinct()
     returnList = []
     for teamMember in result:
-        temp = {"team_id": teamMember.t_id.t_id, "team_name": teamMember.t_id.t_name}
+        record = Team.objects.get(t_id__exact=teamMember['t_id'])
+        temp = {"team_id": record.t_id, "team_name": record.t_name}
         returnList.append(temp)
     return JsonResponse({"success": True, "exc": "", "list": returnList})

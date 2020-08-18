@@ -19,9 +19,9 @@ def add_doc(request):
     try:
         doc = File.objects.get(f_id = doc_id)
         fav = Favorites.objects.create(u_id = request.user, f_id=doc)
-        return JsonResponse({'success':'true', 'exc':''})
+        return JsonResponse({'success':True, 'exc':''})
     except Exception:
-        return JsonResponse({'success':'false', 'exc':'文档ID有误。'})
+        return JsonResponse({'success':False, 'exc':'文档ID有误。'})
 
 
 @require_POST
@@ -33,9 +33,9 @@ def cancel_doc(request):
     try:
         fav = Favorites.objects.get(u_id = request.user, f_id=doc)
         fav.delete()
-        return JsonResponse({'success':'true', 'exc':''})
+        return JsonResponse({'success':True, 'exc':''})
     except Exception:
-        return JsonResponse({'success':'false', 'exc':'文档ID有误。'})
+        return JsonResponse({'success':False, 'exc':'文档ID有误。'})
 
 
 @require_GET
@@ -65,6 +65,6 @@ def get_all_docs(request):
                 "time" :fav.f_id.f_etime,
             }
             res.append(temp)
-        return JsonResponse({'success':'true', 'exc':'','list':res})
+        return JsonResponse({'success':True, 'exc':'','list':res})
     except Exception:
-        return JsonResponse({'success':'false', 'exc':'文档ID有误。'})
+        return JsonResponse({'success':False, 'exc':'文档ID有误。'})

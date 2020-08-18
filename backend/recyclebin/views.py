@@ -23,7 +23,7 @@ def get_team_deleted_file(request):
     -exc：字符串，表示错误信息，成功则为空
     """
     if not request.user.is_authenticated:
-        return JsonResponse({"success": 'false', "exc": "请先登录或注册。"})
+        return JsonResponse({"success": False, "exc": "请先登录或注册。"})
 
     try:
         data = simplejson.loads(request.body)
@@ -45,9 +45,9 @@ def get_team_deleted_file(request):
                 'delete_time': file.f_dtime
             }
             res.append(temp)
-        return JsonResponse({"success": 'true', "exc": '', 'doc_list': res})
+        return JsonResponse({"success": True, "exc": '', 'doc_list': res})
     except Exception as e:
-        return JsonResponse({"success": 'false', "exc": e.__str__})
+        return JsonResponse({"success": False, "exc": e.__str__})
 
 
 @require_GET
@@ -61,7 +61,7 @@ def get_private_deleted_file(request):
     -exc：字符串，表示错误信息，成功则为空
     """
     if not request.user.is_authenticated:
-        return JsonResponse({"success": 'false', "exc": "please login or register"})
+        return JsonResponse({"success": False, "exc": "please login or register"})
 
     try:
         file_list = File.objects.filter(u_id__id=request.user.id, trash_status=True)
@@ -76,16 +76,16 @@ def get_private_deleted_file(request):
                 'delete_time': file.f_dtime
             }
             res.append(temp)
-        return JsonResponse({"success": 'true', "exc": '', 'list': res})
+        return JsonResponse({"success": True, "exc": '', 'list': res})
     except Exception as e:
-        return JsonResponse({"success": 'false', "exc": e.__str__})
+        return JsonResponse({"success": False, "exc": e.__str__})
 
 
 @require_POST
 def recover_file(request):
     '''by lighten'''
     if not request.user.is_authenticated:
-        return JsonResponse({"success": 'false', "exc": "请先登录或注册。"})
+        return JsonResponse({"success": False, "exc": "请先登录或注册。"})
 
     try:
         data = simplejson.loads(request.body)
@@ -100,18 +100,18 @@ def recover_file(request):
             file.trash_status = False
             file.f_dtime = None
             file.save()
-            return JsonResponse({"success": 'true', "exc": ""})
+            return JsonResponse({"success": True, "exc": ""})
         else:
-            return JsonResponse({"success": 'false', "exc": "没有操作权限。"})
+            return JsonResponse({"success": False, "exc": "没有操作权限。"})
     except Exception as e:
-        return JsonResponse({'success': 'false', 'exc': e.__str__})
+        return JsonResponse({'success': False, 'exc': e.__str__})
 
 
 @require_POST
 def delete_file(request):
     ''' by lighten'''
     if not request.user.is_authenticated:
-        return JsonResponse({"success": 'false', "exc": "请先登录或注册。"})
+        return JsonResponse({"success": False, "exc": "请先登录或注册。"})
     
     try:
         data = simplejson.loads(request.body)
@@ -123,11 +123,11 @@ def delete_file(request):
         file = File.objects.get(f_id=file_id)
         if get_identity(request.user, file) <= file.is_delete:
             file.delete()
-            JsonResponse({"success": "true", "exc": ""})
+            JsonResponse({"success": True, "exc": ""})
         else:
-            return JsonResponse({"success": 'false', 'exc': '当前用户没有删除权限。'})
+            return JsonResponse({"success": False, 'exc': '当前用户没有删除权限。'})
     except Exception as e:
-        return JsonResponse({'success': 'false', 'exc': e.__str__})
+        return JsonResponse({'success': False, 'exc': e.__str__})
 
 
 def clear_all_docs(request):

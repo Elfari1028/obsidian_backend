@@ -244,7 +244,7 @@ def edit_permission(request):
         - exc: 字符串，错误信息
     '''
     if not request.user.is_authenticated:
-        return JsonResponse({"success": "false", "exc": "请先登录或注册。"})
+        return JsonResponse({"success": False, "exc": "请先登录或注册。"})
 
     data = simplejson.loads(request.body)
     other_auth = data["auth"]
@@ -255,10 +255,11 @@ def edit_permission(request):
     if get_identity(request.user, file) != 1:
         return JsonResponse({"success": False, "exc": "没有权限编辑当前文档权限。"})
     else:
-        set_permission(file, team_auth, 2)
+        if file.t_id != None:
+            set_permission(file, team_auth, 2)
         set_permission(file, other_auth, 3)
         file.save()
-        return JsonResponse({"success": "true", "exc": ""})
+        return JsonResponse({"success": True, "exc": ""})
 
 
 @require_POST
@@ -280,7 +281,7 @@ def get_doc_edit_history(request):
         }, {} , {} ]
     '''
     if not request.user.is_authenticated:
-        return JsonResponse({"success": "false", "exc": "请先登录或注册。", 'history': ''})
+        return JsonResponse({"success": False, "exc": "请先登录或注册。", 'history': ''})
     else:
         try:
             data = simplejson.loads(request.body)
@@ -302,9 +303,9 @@ def get_doc_edit_history(request):
         # 任何人都可以读
         if get_identity(request.user, file) >= file.is_read:
             history = get_res_lists()
-            return JsonResponse({"success": "true", "exc": "", 'history': history})
+            return JsonResponse({"success": True, "exc": "", 'history': history})
         else:
-            return JsonResponse({"success": "false", "exc": "没有获取权限。", 'history': ''})
+            return JsonResponse({"success": False, "exc": "没有获取权限。", 'history': ''})
 
 
 @require_POST
@@ -317,7 +318,7 @@ def delete_team_file(request):
     -exc：字符串，表示错误信息，成功则为空
     '''
     if not request.user.is_authenticated:
-        return JsonResponse({"success": "false", "exc": "please login or register"})
+        return JsonResponse({"success": False, "exc": "please login or register"})
 
     try:
         data = simplejson.loads(request.body)
@@ -333,21 +334,21 @@ def delete_team_file(request):
             file.trash_status = True
             file.f_dtime = timezone.now()
             file.save()
-            return JsonResponse({"success": "true", "exc": ''})
+            return JsonResponse({"success": True, "exc": ''})
         elif permission_level == 2 and file.is_delete >= 2:
             file.trash_status = True
             file.f_dtime = timezone.now()
             file.save()
-            return JsonResponse({"success": "true", "exc": ''})
+            return JsonResponse({"success": True, "exc": ''})
         elif permission_level == 3 and file.is_delete == 3:
             file.trash_status = True
             file.f_dtime = timezone.now()
             file.save()
-            return JsonResponse({"success": "true", "exc": ''})
+            return JsonResponse({"success": True, "exc": ''})
         else:
-            return JsonResponse({"success": "false", "exc": "没有删除权限。"})
+            return JsonResponse({"success": False, "exc": "没有删除权限。"})
     except Exception as e:
-        return JsonResponse({"success": "false", "exc": e.__str__})
+        return JsonResponse({"success": False, "exc": e.__str__})
 
 
 @require_POST
@@ -356,7 +357,7 @@ def list_all_team_docs(request):
     by lighten
     """
     if not request.user.is_authenticated:
-        return JsonResponse({"success": "false", "exc": "please login or register"})
+        return JsonResponse({"success":False, "exc": "please login or register"})
 
     try:
         data = simplejson.loads(request.body)
@@ -378,9 +379,9 @@ def list_all_team_docs(request):
                 'create_time': file.f_ctime,
             }
             res.append(temp)
-        return JsonResponse({"success": 'true', "exc": '', 'list': res})
+        return JsonResponse({"success": True, "exc": '', 'list': res})
     except Exception as e:
-        return JsonResponse({"success": 'false', "exc": e.__str__})
+        return JsonResponse({"success": False, "exc": e.__str__})
 
 
 def get_recent_read(request):

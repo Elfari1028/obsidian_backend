@@ -6,14 +6,14 @@ from account.models import Comment, MyUser, File
 from message.views import add_message
 import simplejson
 from django.contrib.auth.decorators import login_required
+import time
 # Create your views here.
 
 @require_POST
-@login_required(login_url="/accounts/login1")
 def get_comments(request):
-    '''
-    by lighten
-    '''
+    '''by lighten'''
+    if not request.user.is_authenticated:
+        return JsonResponse({"success":False, "exc":"请先登录或注册。"})
     data = simplejson.loads(request.body)
     file_id = data['doc_id']
     comments = Comment.objects.filter(f_id__f_id = file_id).order_by('-create_time')
@@ -27,7 +27,7 @@ def get_comments(request):
             'content':comment.content,
             'create_time': comment.create_time
         }
-        try:
+        if comment.pc_id != None:
             reply_comment = Comment.objects.get(c_id=comment.pc_id)
             res_reply = {
                 "com_id": reply_comment.c_id,
@@ -37,8 +37,8 @@ def get_comments(request):
                 'content':reply_comment.content,
                 'create_time': reply_comment.create_time
             }
-        except:
-            res_reply=None
+        else:
+            res_reply={}
         temp = {"comment":res_main, "reply":res_reply}
         res.append(temp)
 
@@ -70,7 +70,7 @@ def reply_comment(request):
         content = data['content']
         file_id = data['doc_id']
         reply_to = data['reply_to']
-        file = File.objects.get(f_id=file_id)
+        file = File.objects.get(f_id__f_id = file_id)
     except Exception:
         return JsonResponse({"success":False, 'exc':"请求格式错误。"})
     # 回复他人的回复

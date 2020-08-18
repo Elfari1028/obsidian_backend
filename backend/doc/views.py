@@ -119,11 +119,11 @@ def open_one_doc(request):
     try:
         doc = File.objects.get(f_id__exact=doc_id)
         creator = doc.u_id
-        title = doc.f_title
         identity = get_identity(request.user, doc)
         current_auth = generate_permission_dic(doc, identity)
         auth = generate_permission_dic(doc, 3)
         team_auth = {}
+        title = doc.f_title
         creator_dic = {"id": creator.id, "name": creator.username, "avatar": creator.u_avatar.url}
         superuser = False
         conflict_protection = False
@@ -133,37 +133,42 @@ def open_one_doc(request):
         if doc.t_id is not None:
             belong_team = True
             team_auth = generate_permission_dic(doc, 2)
-        if doc.f_status:  # 有锁
-            if (datetime.now() - doc.f_etime).total_seconds() <= 120:
-                if doc.last_user != request.user:  # 锁有效且不是当前用户所拥有
-                    return JsonResponse({"success": False, "exc": "文件被其他人使用中", "title": title, "document": "",
-                                         "favorite": False, "current_auth": current_auth, "auth": auth,
-                                         "team_auth": team_auth, "superuser": superuser, "belong_team": belong_team,
-                                         "conflict_protection": False, "creator": creator_dic})
-                else:  # 锁有效且是当前用户所拥有
-                    conflict_protection = True
-        if not current_auth['read']:
-            return JsonResponse({"success": False, "exc": "没有权限", "title": title, "document": "", "favorite": False,
-                                 "current_auth": current_auth, "auth": auth, "team_auth": team_auth,
-                                 "superuser": superuser, "belong_team": belong_team, "conflict_protection": False,
-                                 "creator": creator_dic})
-        BrowseRecords.objects.create(u_id=request.user, f_id=doc)  # 有读权限
-        doc.f_status = False  # 释放锁
-        if current_auth['edit']:
-            doc.f_status = True  # 上锁
-            doc.last_user = request.user
-            doc.f_etime = datetime.now()  # 添加上锁时间
-            doc.save()
         content = "" if doc.f_content is None else doc.f_content
         favorite = False
         favorite_list = Favorites.objects.filter(Q(u_id__exact=request.user) & Q(f_id__exact=doc))
         if favorite_list.exists():
             favorite = True
-        returnDict = {"success": True, "exc": "", "title": doc.f_title, "document": content, "favorite": favorite,
-                      "current_auth": current_auth, "auth": auth, "team_auth": team_auth, "superuser": superuser,
-                      "belong_team": belong_team, "conflict_protection": conflict_protection,
-                      "creator": {"id": creator.id, "name": creator.username, "avatar": creator.u_avatar.url}}
-        return JsonResponse(returnDict)
+        return_dict = {"success": True, "exc": "", "title": doc.f_title, "document": content, "favorite": favorite,
+                       "current_auth": current_auth, "auth": auth, "team_auth": team_auth, "superuser": superuser,
+                       "belong_team": belong_team, "conflict_protection": conflict_protection,
+                       "creator": {"id": creator.id, "name": creator.username, "avatar": creator.u_avatar.url}}
+        false_return_dict = {"success": False, "exc": "没有权限", "title": title, "document": "", "favorite": False,
+                             "current_auth": current_auth, "auth": auth, "team_auth": team_auth,
+                             "superuser": superuser, "belong_team": belong_team, "conflict_protection": False,
+                             "creator": creator_dic}
+        if doc.f_status:  # 有锁
+            if (datetime.now() - doc.f_etime).total_seconds() <= 120:
+                return_dict['conflict_protection'] = True  # 如果锁有效且当前用户有读权限，则返回只读页面
+                if not current_auth['read']:
+                    return JsonResponse(false_return_dict)
+                else:
+                    BrowseRecords.objects.create(u_id=request.user, f_id=doc)  # 有读权限
+                    return JsonResponse(return_dict)
+        # 下为锁无效或者没有锁的情况
+        doc.f_status = False  # 释放锁
+        if current_auth['edit']:
+            doc.f_ecount = 0
+            doc.f_status = True  # 上锁
+            doc.last_user = request.user
+            doc.f_etime = datetime.now()  # 添加上锁时间
+            doc.save()
+            BrowseRecords.objects.create(u_id=request.user, f_id=doc)  # 可写必可读
+            return JsonResponse(return_dict)
+        elif current_auth['read']:
+            BrowseRecords.objects.create(u_id=request.user, f_id=doc)
+            return JsonResponse(return_dict)
+        else:
+            return JsonResponse(false_return_dict)
     except File.DoesNotExist:
         return JsonResponse({"success": False, "exc": "文件不存在", "title": "", "document": "", "current_auth": {},
                              "auth": {}, "team_auth": {}, "superuser": False, "belong_team": False,
@@ -287,7 +292,7 @@ def get_doc_edit_history(request):
             data = simplejson.loads(request.body)
             file_id = data['doc_id']
         except Exception:
-            return JsonResponse({'success':False, 'exc':"请求格式错误。"})
+            return JsonResponse({'success': False, 'exc': "请求格式错误。"})
         file = File.objects.get(f_id=file_id)
 
         # 显然只有拥有读权限的用户可以查看编辑历史
@@ -324,7 +329,7 @@ def delete_team_file(request):
         data = simplejson.loads(request.body)
         file_id = data['doc_id']
     except Exception:
-        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
+        return JsonResponse({'success': False, 'exc': "请求格式错误。"})
 
     try:
         file = File.objects.get(pk=file_id)
@@ -357,13 +362,13 @@ def list_all_team_docs(request):
     by lighten
     """
     if not request.user.is_authenticated:
-        return JsonResponse({"success":False, "exc": "please login or register"})
+        return JsonResponse({"success": False, "exc": "please login or register"})
 
     try:
         data = simplejson.loads(request.body)
         team_id = data['team_id']
     except Exception:
-        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
+        return JsonResponse({'success': False, 'exc': "请求格式错误。"})
 
     try:
         team_member = TeamMember.objects.get(Q(t_id__t_id__exact=team_id) & Q(u_id__id__exact=request.user.id))
@@ -437,6 +442,19 @@ def create_templates(request):
     return JsonResponse({'success': True})
 
 
+def modify_count(doc, document):
+    if doc.f_content == document:
+        doc.f_ecount += 1
+    else:
+        doc.f_ecount = 0
+    if doc.f_ecount >= 40:  # 10分钟没有变化
+        doc.f_ecount = 0
+        doc.save()
+        return False
+    doc.save()
+    return True
+
+
 def auto_save_doc(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先登录"})
@@ -446,18 +464,19 @@ def auto_save_doc(request):
         document = data['document']
         if doc.f_status:  # 有锁
             if doc.last_user == request.user:  # 本人拥有
+                if not modify_count(doc, document):
+                    return JsonResponse({"success": False, "exc": "10分钟内没有修改，自动关闭"})
                 doc.f_content = document
                 doc.f_etime = datetime.now()
                 doc.save()
-                EditHistory.objects.create(u_id=request.user, f_id=doc)
                 return JsonResponse({"success": True, "exc": ""})
             if (datetime.now() - doc.f_etime).total_seconds() <= 120:  # 非本人拥有且锁未过期
                 return JsonResponse({"success": False, "exc": "文件被其他人使用中"})
         if doc.last_user == request.user:  # 1.无锁且最近一次是本人写  2.锁非本人拥有且过期且最近一次是本人写
+            doc.f_ecount = 0  # 重新获得锁，将记录内容重复的变量清零
             doc.f_content = document
             doc.f_status = True  # 模拟掉线后再次连接的情况，情况1代表着自己掉线，情况2代表他人掉线且他人没写
             doc.f_etime = datetime.now()
-            EditHistory.objects.create(u_id=request.user, f_id=doc)
             doc.save()
             return JsonResponse({"success": True, "exc": ""})
         return JsonResponse({"success": False, "exc": "没有权限"})
@@ -474,6 +493,7 @@ def close_doc(request):
             if doc.last_user == request.user:
                 doc.f_content = document
                 doc.f_etime = datetime.now()
+                doc.f_ecount = 0
                 doc.f_status = False  # 释放锁
                 doc.save()
                 EditHistory.objects.create(u_id=request.user, f_id=doc)
@@ -483,6 +503,7 @@ def close_doc(request):
         if doc.last_user == request.user:
             doc.f_content = document
             doc.f_etime = datetime.now()
+            doc.f_ecount = 0
             doc.f_status = False
             doc.save()
             EditHistory.objects.create(u_id=request.user, f_id=doc)
@@ -507,18 +528,18 @@ def modify_title(request):
         if doc.f_status:
             if doc.last_user == request.user:  # 有锁且锁为当前用户拥有
                 doc.f_title = title
+                doc.f_ecount = 0
                 doc.f_etime = datetime.now()
                 doc.save()
-                EditHistory.objects.create(u_id=request.user, f_id=doc)
                 return JsonResponse({"success": True, "exc": ""})
             if (datetime.now() - doc.f_etime).total_seconds() <= 120:  # 非本人拥有且锁未过期
                 return JsonResponse({"success": False, "exc": "文件被其他人使用中"})
         if doc.last_user == request.user:
             doc.f_title = title
             doc.f_status = True
+            doc.f_ecount = 0
             doc.f_etime = datetime.now()
             doc.save()
-            EditHistory.objects.create(u_id=request.user, f_id=doc)
             return JsonResponse({"success": True, "exc": ""})
         return JsonResponse({"success": False, "exc": "文档非正常打开，没有获得写锁"})
     except File.DoesNotExist:
@@ -530,8 +551,9 @@ def refresh_doc(request):
     try:
         doc = File.objects.get(f_id__exact=data['doc_id'])
         conflict_protection = True
-        if doc.f_status and (datetime.now() - doc.f_etime).total_seconds() > 120 and doc.u_id == request.user:
-            conflict_protection = False
+        if data['edit']:  # 有写权限
+            if not doc.f_status or (doc.f_status and (datetime.now() - doc.f_etime).total_seconds() > 120):
+                conflict_protection = False
         return JsonResponse({"success": True, "exc": "", "title": doc.f_title,
                              "doc": "" if doc.f_content is None else doc.f_content,
                              "conflict_protection": conflict_protection})

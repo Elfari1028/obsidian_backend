@@ -41,7 +41,7 @@ def get_team_deleted_file(request):
                 'title': file.f_title,
                 'team_id': file.t_id.t_id,
                 'team_name': file.t_id.t_name,
-                'edit_time': file.f_etime,
+                'time': file.f_etime,
                 'delete_time': file.f_dtime
             }
             res.append(temp)

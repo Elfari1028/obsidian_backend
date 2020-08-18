@@ -375,7 +375,7 @@ def list_all_team_docs(request):
                 'title': file.f_title,
                 'team_id': file.t_id.t_id,
                 'team_name': file.t_id.t_name,
-                'edit_time': file.f_etime,
+                'time': file.f_etime,
                 'create_time': file.f_ctime,
             }
             res.append(temp)

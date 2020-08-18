@@ -47,7 +47,7 @@ def get_team_deleted_file(request):
             res.append(temp)
         return JsonResponse({"success": True, "exc": '', 'doc_list': res})
     except Exception as e:
-        return JsonResponse({"success": False, "exc": e.__str__})
+        return JsonResponse({"success": False, "exc": "获取团对被删除文档失败。"})
 
 
 @require_GET
@@ -67,18 +67,29 @@ def get_private_deleted_file(request):
         file_list = File.objects.filter(u_id__id=request.user.id, trash_status=True)
         res = []
         for file in file_list:
-            temp = {
-                'doc_id': file.f_id,
-                'title': file.f_title,
-                'team_id': file.t_id.t_id,
-                'team_name': file.t_id.t_name,
-                'edit_time': file.f_etime,
-                'delete_time': file.f_dtime
-            }
+            if file.t_id != None:
+                temp = {
+                    'doc_id': file.f_id,
+                    'title': file.f_title,
+                    'team_id': file.t_id.t_id,
+                    'team_name': file.t_id.t_name,
+                    'edit_time': file.f_etime,
+                    'delete_time': file.f_dtime
+                }
+            else:
+                temp = {
+                    'doc_id': file.f_id,
+                    'title': file.f_title,
+                    'team_id': -1,
+                    'team_name': "",
+                    'edit_time': file.f_etime,
+                    'delete_time': file.f_dtime
+                }
             res.append(temp)
         return JsonResponse({"success": True, "exc": '', 'list': res})
     except Exception as e:
-        return JsonResponse({"success": False, "exc": e.__str__})
+        print(e)
+        return JsonResponse({"success": False, "exc": "获取回收站文件列表失败。"})
 
 
 @require_POST
@@ -104,7 +115,7 @@ def recover_file(request):
         else:
             return JsonResponse({"success": False, "exc": "没有操作权限。"})
     except Exception as e:
-        return JsonResponse({'success': False, 'exc': e.__str__})
+        return JsonResponse({'success': False, 'exc': "删恢复问价失败。"})
 
 
 @require_POST
@@ -123,11 +134,11 @@ def delete_file(request):
         file = File.objects.get(f_id=file_id)
         if get_identity(request.user, file) <= file.is_delete:
             file.delete()
-            JsonResponse({"success": True, "exc": ""})
+            return JsonResponse({"success": True, "exc": ""})
         else:
             return JsonResponse({"success": False, 'exc': '当前用户没有删除权限。'})
     except Exception as e:
-        return JsonResponse({'success': False, 'exc': e.__str__})
+        return JsonResponse({'success': False, 'exc':"删除文件失败。"})
 
 
 def clear_all_docs(request):

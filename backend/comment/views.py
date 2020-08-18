@@ -23,7 +23,7 @@ def get_comments(request):
             "com_id": comment.c_id,
             'username': comment.u_id.username, 
             'user_id':  comment.u_id.id, 
-            'avatar': comment.u_id.avatar.url,
+            'avatar': comment.u_id.u_avatar.url,
             'content':comment.content,
             'create_time': comment.create_time
         }
@@ -33,7 +33,7 @@ def get_comments(request):
                 "com_id": reply_comment.c_id,
                 'username': reply_comment.u_id.username, 
                 'user_id':  reply_comment.u_id.id, 
-                'avatar': reply_comment.u_id.avatar.url,
+                'avatar': reply_comment.u_id.u_avatar.url,
                 'content':reply_comment.content,
                 'create_time': reply_comment.create_time
             }

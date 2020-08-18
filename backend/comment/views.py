@@ -38,7 +38,7 @@ def get_comments(request):
                 'create_time': reply_comment.create_time
             }
         else:
-            res_reply=None
+            res_reply={}
         temp = {"comment":res_main, "reply":res_reply}
         res.append(temp)
 
@@ -70,7 +70,7 @@ def reply_comment(request):
         content = data['content']
         file_id = data['doc_id']
         reply_to = data['reply_to']
-        file = File.objects.get(f_id=file_id)
+        file = File.objects.get(f_id__f_id = file_id)
     except Exception:
         return JsonResponse({"success":False, 'exc':"请求格式错误。"})
     # 回复他人的回复

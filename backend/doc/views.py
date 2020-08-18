@@ -307,7 +307,7 @@ def get_doc_edit_history(request):
             return res
 
         # 任何人都可以读
-        if get_identity(request.user, file) >= file.is_read:
+        if get_identity(request.user, file) <= file.is_read:
             history = get_res_lists()
             return JsonResponse({"success": True, "exc": "", 'history': history})
         else:

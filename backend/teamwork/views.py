@@ -55,7 +55,7 @@ def invite_members(request):
     # POST(json)
     # 发送：
     # -inviter_id：整型，表示邀请者id
-    # -user_id：整型，表示被邀请者id
+    # -user_name：整型，表示被邀请者id
     # -team_id：整型，表示邀请至的团队id
     #
     # 收到：
@@ -79,16 +79,17 @@ def invite_members(request):
             return JsonResponse({'success': False, 'exc': '团队不存在'})
 
         try:
-            myuser = MyUser.objects.get(id=data['user_id'])
+            myuser = MyUser.objects.get(username=data['user_name'])
+            userid=myuser.id
             try:
                 # 如果已经是成员，就不能被邀请了
-                exist = TeamMember.objects.get(u_id=data['user_id'], t_id=data['team_id'], status=2)
+                exist = TeamMember.objects.get(u_id=userid, t_id=data['team_id'], status=2)
                 return JsonResponse({'success': False, 'exc': '对方已在团队中，无法重复邀请'})
             except TeamMember.DoesNotExist:
                 # 没加入，就能被邀请，每次join_time字段更新
                 try:
                     # 之前邀请过
-                    exist = TeamMember.objects.get(u_id=data['user_id'], t_id=data['team_id'])
+                    exist = TeamMember.objects.get(u_id=userid, t_id=data['team_id'])
                     exist.inviter.id = data['inviter_id']
                     exist.save()
                     return JsonResponse({'success': True, 'exc': ''})

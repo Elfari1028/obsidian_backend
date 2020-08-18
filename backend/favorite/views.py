@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from doc.views import get_identity
 from account.models import MyUser, File, Team, Template, TeamMember, Favorites
-
+import simplejson
 # Create your views here.
 
 @require_POST

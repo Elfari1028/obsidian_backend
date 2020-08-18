@@ -292,11 +292,11 @@ def get_doc_edit_history(request):
 
         # 显然只有拥有读权限的用户可以查看编辑历史
         def get_res_lists():
-            edit_history_lists = EditHistory.objects.filter(f_id=file.id).order_by('-edit_time')
+            edit_history_lists = EditHistory.objects.filter(f_id=file.f_id).order_by('-edit_time')
             res = []
             for edit_history in edit_history_lists:
                 temp = {'username': edit_history.u_id.username, 'user_id': edit_history.u_id.id,
-                        'avatar': edit_history.u_id.avatar.url, 'time': edit_history.edit_time}
+                        'avatar': edit_history.u_id.u_avatar.url, 'time': edit_history.edit_time}
                 res.append(temp)
             return res
 

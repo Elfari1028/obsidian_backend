@@ -179,7 +179,7 @@ def open_one_doc(request):
 def list_all_my_docs(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先登录", "listnum": -1, "list": []})
-    result = File.objects.filter(u_id__username__exact=request.user.username)
+    result = File.objects.filter(Q(u_id__username__exact=request.user.username) & Q(trash_status__exact=False))
     returnList = []
     for doc in result:
         # 暂且定义没有团队时候team_id == -1; team_name == ""

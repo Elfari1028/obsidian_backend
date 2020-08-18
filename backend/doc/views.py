@@ -15,18 +15,18 @@ from account.models import MyUser, File, Team, Template, TeamMember, DocImage, B
 def set_permission(new_doc, dic, rank):
     if dic['read']:  # 可读一定可分享
         new_doc.is_read = rank
-        new_doc.is_share = rank
+        # new_doc.is_share = rank
     if dic['edit']:  # 可写一定可读、可分享
         new_doc.is_editor = rank
         new_doc.is_read = rank
-        new_doc.is_share = rank
+        # new_doc.is_share = rank
     if dic['comment']:  # 可评论一定可读、可分享
         new_doc.is_comment = rank
         new_doc.is_read = rank
-        new_doc.is_share = rank
-    if dic['share']:  # 可分享一定可读
-        new_doc.is_share = rank
-        new_doc.is_read = rank
+        # new_doc.is_share = rank
+    # if dic['share']:  # 可分享一定可读
+    #     new_doc.is_share = rank
+    #     new_doc.is_read = rank
 
 
 # 用于获得某个人相对某个文档的身份，1为作者/团队创建者，2为队员，3为其他人
@@ -50,7 +50,8 @@ def generate_permission_dic(instance, identity):
     res = {"read": True if instance.is_read >= identity else False,
            "edit": True if instance.is_editor >= identity else False,
            'comment': True if instance.is_comment >= identity else False,
-           'share': True if instance.is_share >= identity else False}
+        #    'share': True if instance.is_share >= identity else False
+           }
     return res
 
 

@@ -133,6 +133,9 @@ def delete_file(request):
     try:
         file = File.objects.get(f_id=file_id)
         if get_identity(request.user, file) <= file.is_delete:
+            comments = Comment.objects.filter(f_id=file)
+            for com in comments:
+                com.delete()
             file.delete()
             return JsonResponse({"success": True, "exc": ""})
         else:

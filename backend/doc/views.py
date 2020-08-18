@@ -206,6 +206,7 @@ def put_into_recycle_bin(request):
         if identity > file.is_delete:
             return JsonResponse({"success": False, "exc": "没有删除权限"})
         file.trash_status = True  # 放入回收站
+        file.f_dtime = datetime.now()
         file.save()
         return JsonResponse({"success": True, "exc": ""})
     except File.DoesNotExist:

@@ -15,7 +15,12 @@ def add_doc(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先注册或登录。"})
     
-    doc_id = request.POST.get('doc_id')
+    try:
+        data = simplejson.loads(request.body)
+        doc_id = data['doc_id']
+    except Exception:
+        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
+
     try:
         doc = File.objects.get(f_id = doc_id)
         fav = Favorites.objects.create(u_id = request.user, f_id=doc)
@@ -28,9 +33,13 @@ def add_doc(request):
 def cancel_doc(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先注册或登录。"})
-    
-    doc_id = request.POST.get('doc_id')
     try:
+        data = simplejson.loads(request.body)
+        doc_id = data['doc_id']
+    except Exception:
+        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
+    try:
+        doc = File.objects.get(f_id = doc_id)
         fav = Favorites.objects.get(u_id = request.user, f_id=doc)
         fav.delete()
         return JsonResponse({'success':True, 'exc':''})

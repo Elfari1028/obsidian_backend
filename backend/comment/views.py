@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.views.decorators.http import (require_GET, 
                                           require_POST)
 from django.http import HttpResponse, JsonResponse
-from account.models import Comment, MyUser
+from account.models import Comment, MyUser, File
 from message.views import add_message
 import simplejson
 from django.contrib.auth.decorators import login_required
@@ -27,15 +27,18 @@ def get_comments(request):
             'content':comment.content,
             'create_time': comment.create_time
         }
-        reply_comment = Comment.objects.get(c_id=comment.pc_id)
-        res_reply = {
-            "com_id": reply_comment.c_id,
-            'username': reply_comment.u_id.username, 
-            'user_id':  reply_comment.u_id.id, 
-            'avatar': reply_comment.u_id.avatar.url,
-            'content':reply_comment.content,
-            'create_time': reply_comment.create_time
-        }
+        try:
+            reply_comment = Comment.objects.get(c_id=comment.pc_id)
+            res_reply = {
+                "com_id": reply_comment.c_id,
+                'username': reply_comment.u_id.username, 
+                'user_id':  reply_comment.u_id.id, 
+                'avatar': reply_comment.u_id.avatar.url,
+                'content':reply_comment.content,
+                'create_time': reply_comment.create_time
+            }
+        except:
+            res_reply={}
         temp = {"comment":res_main, "reply":res_reply}
         res.append(temp)
 

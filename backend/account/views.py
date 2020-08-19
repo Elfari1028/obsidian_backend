@@ -45,7 +45,7 @@ def mail_check(mail_address):
 
 def email_used(request):
     data = simplejson.loads(request.body)
-    if search_email(data['email']):
+    if search_email(data['email']) and data['email'] != request.user.email:
         return JsonResponse({"success": False, "exc": "此电子邮箱已用过"})
     else:
         return JsonResponse({"success": True, "exc": ""})
@@ -53,7 +53,7 @@ def email_used(request):
 
 def username_used(request):
     data = simplejson.loads(request.body)
-    if search_username(data['username']):
+    if search_username(data['username']) and data['username'] != request.user.username:
         return JsonResponse({"success": False, "exc": "此用户名已被使用"})
     else:
         return JsonResponse({"success": True, "exc": ""})

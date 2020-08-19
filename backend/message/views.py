@@ -13,29 +13,29 @@ import simplejson
 def add_message(sender=None, receiver=None, m=0, team=None):
     '''by Lighten
     '''
-    # 文档被评论
+    # 文档被评论-
     if m == 1:
         content = sender.username + "对您的文档进行了评论，快去看看吧！ " + "www.baidu.com"
         Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="评论")
-    # 团队邀请
+    # 团队邀请-
     elif m == 2:
         content = sender.username + "邀请您加入" + team.t_name + "快去看看吧！ "
         Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="团队邀请")
-    # 加入团队
+    # 被允许加入团队
     elif m == 3:
-        content = sender.username + "加入了您的团队" + team.t_name + "，快去看看吧！ " + "www.baidu.com"
-        Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="加入团队")
-    # 退出团队
+        content = "您已加入团队" + team.t_name + "，快去看看吧！ "
+        Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="允许加入团队")
+    # 被拒绝加入团队
     elif m == 4:
-        content = sender.username + "退出了您的团队" + team.t_name + "，快去看看吧！ " + "www.baidu.com"
-        Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="退出团队")
-    # 踢出团队
+        content = "您被拒绝加入团队" + team.t_name + "。 "
+        Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="拒绝加入团队")
+    # 踢出团队-
     elif m == 5:
-        content = sender.username + "您被踢出了团队" + team.t_name + "，快去看看吧！ " + "www.baidu.com"
+        content = sender.username + "您被踢出了团队" + team.t_name + "，快去看看吧！ "
         Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="踢出团队")
-    # 解散团队
+    # 解散团队-
     elif m == 6:
-        content = "您所属的团队" + team.t_name + "已被" + sender.username + "解散，快去看看吧！ " + "www.baidu.com"
+        content = "您所属的团队" + team.t_name + "已被" + sender.username + "解散，快去看看吧！ "
         team_members = TeamMember.objects.filter(t_id=team.t_id)
         for tm in team_members:
             Message.objects.create(sender=sender, receiver=tm.u_id, content=content, m_type="解散团队")

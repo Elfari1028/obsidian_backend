@@ -8,7 +8,7 @@ from django.db.utils import IntegrityError
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 import simplejson
 import json
-
+from message.views import add_message
 
 # Create your views here.
 
@@ -92,11 +92,19 @@ def invite_members(request):
                     exist = TeamMember.objects.get(u_id=userid, t_id=data['team_id'])
                     exist.inviter_id = data['inviter_id']
                     exist.save()
+                    
+                    # 添加消息通知
+                    add_message(sender=request.user,receiver=myuser, m=2)
+
                     return JsonResponse({'success': True, 'exc': ''})
                 except TeamMember.DoesNotExist:
                     # 没邀请过
                     team = Team.objects.get(t_id=data['team_id'])
                     record = TeamMember.objects.create(t_id=team, u_id=myuser, inviter_id=data['inviter_id'])
+
+                    # 添加消息通知
+                    add_message(sender=request.user, receiver=myuser, m=2)
+
                     return JsonResponse({'success': True, 'exc': ''})
         except MyUser.DoesNotExist:
             return JsonResponse({'success': False, 'exc': '用户不存在'})
@@ -134,6 +142,8 @@ def disband(request):
             # tmp = {'f_id': tmpfile.f_id, 't_id': tmpfile.t_id_id}
             # returnlist.append(tmp)
 
+    # 添加消息通知
+    add_message(sender=request.user, m=6, team=team)
     # 删除团队record
     team.delete()
     # return JsonResponse({'returnlist': returnlist, 'success': True, 'exc': ''})
@@ -164,9 +174,17 @@ def deal_with_application(request):
     if data['accepted']:
         record.status = 2
         record.save()
+
+        # 添加消息
+        add_message(sender=request.user, receiver=record.u_id, m=3)
+
         return JsonResponse({'success': True, 'exc': ''})
     else:
         # 拒绝就删除申请
+
+        # 添加消息
+        add_message(sender=request.user, receiver=record.u_id, m=4)
+
         record.delete()
         return JsonResponse({'success': False, 'exc': '申请未通过'})
 
@@ -241,6 +259,10 @@ def remove_member(request):
         return JsonResponse({'success': False, 'exc': '您是队长，无法直接退出团队'})
     # 如果是成员，可以退出
     try:
+
+       # 添加消息通知
+        add_message(sender=request.user,receiver=member, m=5)
+
         record = TeamMember.objects.get(t_id=data['team_id'], u_id=data['user_id'], status=2)
         record.delete()
         # 还要对文件操作吗

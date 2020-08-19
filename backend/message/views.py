@@ -67,6 +67,7 @@ def get_all_messages(request):
             unread_num += 1
         temp = {
             "message_id": msg.m_id,
+            'sender':msg.sender.id,
             "type": msg.m_type,
             'content': msg.content,
             'create_time': msg.create_time.strftime('%Y-%m-%d %H:%M:%S'),

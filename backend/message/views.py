@@ -15,7 +15,7 @@ def add_message(sender=None, receiver=None, m=0, team=None, doc=None):
     '''
     # 文档被评论-
     if m == 1:
-        content = sender.username + "对您的文档进行了评论，快去看看吧！ " + "www.baidu.com"
+        content = sender.username + "对您的文档进行了评论，快去看看吧！ "
         Message.objects.create(sender=sender, receiver=receiver, content=content, m_title="评论", m_type=m, f_id=doc.f_id)
     # 团队邀请-
     elif m == 2:

@@ -150,6 +150,9 @@ def open_one_doc(request):
                              "current_auth": current_auth, "auth": auth, "team_auth": team_auth, "superuser": superuser,
                              "belong_team": belong_team, "team_name": team_name, "conflict_protection": False,
                              "creator": creator_dic}
+        if doc.trash_status:
+            false_return_dict['exc'] = "文档已被删除"
+            return JsonResponse(false_return_dict)
         if doc.f_status:  # 有锁
             if (datetime.now() - doc.f_etime).total_seconds() <= 120:
                 return_dict['conflict_protection'] = True  # 如果锁有效且当前用户有读权限，则返回只读页面

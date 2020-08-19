@@ -89,7 +89,7 @@ def recover_file(request):
     try:
         data = simplejson.loads(request.body)
         doc_id = data['doc_id']
-        team_id = data['team_id']
+        #team_id = data['team_id']
     except Exception:
         return JsonResponse({'success': False, 'exc': "请求格式错误。"})
 

@@ -19,7 +19,7 @@ urlpatterns = [
     path('find_permission_in_one_group/', views.find_permission_in_one_group),
     path('edit_permission/', views.edit_permission),
     path('get_history/', views.get_doc_edit_history),
-    path('list_all_team_docs', views.list_all_team_docs),
+    path('list_all_team_docs/', views.list_all_team_docs),
     path('upload_image/', views.upload_image),
     path('get_recent_read/', views.get_recent_read),
 

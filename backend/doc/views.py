@@ -114,7 +114,8 @@ def open_one_doc(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先登录", "title": "", "document": "", "favorite": False,
                              "current_auth": {}, "auth": {}, "team_auth": {}, "superuser": False, "belong_team": False,
-                             "conflict_protection": False, "creator": {"id": -1, "name": "", "avatar": ""}})
+                             "team_name": "", "conflict_protection": False,
+                             "creator": {"id": -1, "name": "", "avatar": ""}})
     data = simplejson.loads(request.body)
     doc_id = data['doc_id']
     try:
@@ -131,8 +132,10 @@ def open_one_doc(request):
         if identity == 1:
             superuser = True
         belong_team = False
+        team_name = ""
         if doc.t_id is not None:
             belong_team = True
+            team_name = doc.t_id.t_name
             team_auth = generate_permission_dic(doc, 2)
         content = "" if doc.f_content is None else doc.f_content
         favorite = False
@@ -141,11 +144,11 @@ def open_one_doc(request):
             favorite = True
         return_dict = {"success": True, "exc": "", "title": doc.f_title, "document": content, "favorite": favorite,
                        "current_auth": current_auth, "auth": auth, "team_auth": team_auth, "superuser": superuser,
-                       "belong_team": belong_team, "conflict_protection": conflict_protection,
+                       "belong_team": belong_team, "team_name": team_name, "conflict_protection": conflict_protection,
                        "creator": {"id": creator.id, "name": creator.username, "avatar": creator.u_avatar.url}}
         false_return_dict = {"success": False, "exc": "没有权限", "title": title, "document": "", "favorite": False,
-                             "current_auth": current_auth, "auth": auth, "team_auth": team_auth,
-                             "superuser": superuser, "belong_team": belong_team, "conflict_protection": False,
+                             "current_auth": current_auth, "auth": auth, "team_auth": team_auth, "superuser": superuser,
+                             "belong_team": belong_team, "team_name": team_name, "conflict_protection": False,
                              "creator": creator_dic}
         if doc.f_status:  # 有锁
             if (datetime.now() - doc.f_etime).total_seconds() <= 120:
@@ -172,7 +175,7 @@ def open_one_doc(request):
             return JsonResponse(false_return_dict)
     except File.DoesNotExist:
         return JsonResponse({"success": False, "exc": "文件不存在", "title": "", "document": "", "current_auth": {},
-                             "auth": {}, "team_auth": {}, "superuser": False, "belong_team": False,
+                             "auth": {}, "team_auth": {}, "superuser": False, "belong_team": False, "team_name": "",
                              "conflict_protection": False, "creator": {"id": -1, "name": "", "avatar": ""}})
 
 

@@ -50,7 +50,7 @@ def generate_permission_dic(instance, identity):
     res = {"read": True if instance.is_read >= identity else False,
            "edit": True if instance.is_editor >= identity else False,
            'comment': True if instance.is_comment >= identity else False,
-        #    'share': True if instance.is_share >= identity else False
+           #    'share': True if instance.is_share >= identity else False
            }
     return res
 
@@ -96,7 +96,7 @@ def upload_image(request):
     try:
         doc_id = request.POST['doc_id']
     except Exception:
-        return JsonResponse({'success': False, 'exc': "请求格式错误。"})
+        return JsonResponse({'success': False, 'exc': "请求格式错误。", "path": ""})
     # doc_id = request.POST.get('doc_id')
     try:
         file = File.objects.get(f_id__exact=doc_id)
@@ -114,7 +114,8 @@ def open_one_doc(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先登录", "title": "", "document": "", "favorite": False,
                              "current_auth": {}, "auth": {}, "team_auth": {}, "superuser": False, "belong_team": False,
-                             "conflict_protection": False, "creator": {"id": -1, "name": "", "avatar": ""}})
+                             "team_name": "", "conflict_protection": False,
+                             "creator": {"id": -1, "name": "", "avatar": ""}})
     data = simplejson.loads(request.body)
     doc_id = data['doc_id']
     try:
@@ -131,8 +132,10 @@ def open_one_doc(request):
         if identity == 1:
             superuser = True
         belong_team = False
+        team_name = ""
         if doc.t_id is not None:
             belong_team = True
+            team_name = doc.t_id.t_name
             team_auth = generate_permission_dic(doc, 2)
         content = "" if doc.f_content is None else doc.f_content
         favorite = False
@@ -141,11 +144,11 @@ def open_one_doc(request):
             favorite = True
         return_dict = {"success": True, "exc": "", "title": doc.f_title, "document": content, "favorite": favorite,
                        "current_auth": current_auth, "auth": auth, "team_auth": team_auth, "superuser": superuser,
-                       "belong_team": belong_team, "conflict_protection": conflict_protection,
+                       "belong_team": belong_team, "team_name": team_name, "conflict_protection": conflict_protection,
                        "creator": {"id": creator.id, "name": creator.username, "avatar": creator.u_avatar.url}}
         false_return_dict = {"success": False, "exc": "没有权限", "title": title, "document": "", "favorite": False,
-                             "current_auth": current_auth, "auth": auth, "team_auth": team_auth,
-                             "superuser": superuser, "belong_team": belong_team, "conflict_protection": False,
+                             "current_auth": current_auth, "auth": auth, "team_auth": team_auth, "superuser": superuser,
+                             "belong_team": belong_team, "team_name": team_name, "conflict_protection": False,
                              "creator": creator_dic}
         if doc.f_status:  # 有锁
             if (datetime.now() - doc.f_etime).total_seconds() <= 120:
@@ -172,7 +175,7 @@ def open_one_doc(request):
             return JsonResponse(false_return_dict)
     except File.DoesNotExist:
         return JsonResponse({"success": False, "exc": "文件不存在", "title": "", "document": "", "current_auth": {},
-                             "auth": {}, "team_auth": {}, "superuser": False, "belong_team": False,
+                             "auth": {}, "team_auth": {}, "superuser": False, "belong_team": False, "team_name": "",
                              "conflict_protection": False, "creator": {"id": -1, "name": "", "avatar": ""}})
 
 
@@ -191,7 +194,7 @@ def list_all_my_docs(request):
         else:
             temp['team_id'] = -1
             temp['team_name'] = ""
-        temp['time'] = doc.f_etime
+        temp['time'] = doc.f_etime.strftime('%Y-%m-%d %H:%M:%S')
         returnList.append(temp)
     return JsonResponse({"success": True, "exc": "", "listnum": len(result), "list": returnList})
 
@@ -402,7 +405,8 @@ def get_recent_read(request):
         if (now - file.f_etime).days > 7:  # 浏览记录只保存7天
             record.delete()
         temp = {"doc_id": file.f_id, "title": file.f_title, "team_id": -1 if file.t_id is None else file.t_id.t_id,
-                "team_name": "" if file.t_id is None else file.t_id.t_name, "time": file.f_etime}
+                "team_name": "" if file.t_id is None else file.t_id.t_name,
+                "time": file.f_etime.strftime('%Y-%m-%d %H:%M:%S')}
         returnList.append(temp)
     return JsonResponse({"success": True, "exc": "", "list": returnList})
 

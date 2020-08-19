@@ -263,11 +263,13 @@ def edit_permission(request):
     other_auth = data["auth"]
     team_auth = data["team_auth"]
     doc_id = data["doc_id"]
-    print(data)
     file = File.objects.get(f_id=doc_id)
     if get_identity(request.user, file) != 1:
         return JsonResponse({"success": False, "exc": "没有权限编辑当前文档权限。"})
     else:
+        file.is_read = 1
+        file.is_editor = 1
+        file.is_comment = 1
         if file.t_id is not None:
             set_permission(file, team_auth, 2)
         set_permission(file, other_auth, 3)

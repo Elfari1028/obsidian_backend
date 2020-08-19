@@ -94,7 +94,7 @@ def invite_members(request):
                     exist.save()
                     
                     # 添加消息通知
-                    add_message(sender=request.user,receiver=myuser, m=2)
+                    add_message(sender=request.user,receiver=myuser, m=2, team=exist.t_id)
 
                     return JsonResponse({'success': True, 'exc': ''})
                 except TeamMember.DoesNotExist:
@@ -103,7 +103,7 @@ def invite_members(request):
                     record = TeamMember.objects.create(t_id=team, u_id=myuser, inviter_id=data['inviter_id'])
 
                     # 添加消息通知
-                    add_message(sender=request.user, receiver=myuser, m=2)
+                    add_message(sender=request.user, receiver=myuser, m=2, team=team)
 
                     return JsonResponse({'success': True, 'exc': ''})
         except MyUser.DoesNotExist:
@@ -176,14 +176,14 @@ def deal_with_application(request):
         record.save()
 
         # 添加消息
-        add_message(sender=request.user, receiver=record.u_id, m=3)
+        add_message(sender=request.user, receiver=record.u_id, m=3, team=record.t_id)
 
         return JsonResponse({'success': True, 'exc': ''})
     else:
         # 拒绝就删除申请
 
         # 添加消息
-        add_message(sender=request.user, receiver=record.u_id, m=4)
+        add_message(sender=request.user, receiver=record.u_id, m=4, team=record.t_id)
 
         record.delete()
         return JsonResponse({'success': False, 'exc': '申请未通过'})
@@ -261,7 +261,7 @@ def remove_member(request):
     try:
 
        # 添加消息通知
-        add_message(sender=request.user,receiver=member, m=5)
+        add_message(sender=request.user,receiver=member, m=5, team=team)
 
         record = TeamMember.objects.get(t_id=data['team_id'], u_id=data['user_id'], status=2)
         record.delete()

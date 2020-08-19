@@ -67,23 +67,24 @@ def get_all_docs(request):
         favs = Favorites.objects.filter(u_id=request.user)
         res = []
         for fav in favs:
-            if fav.f_id.t_id == None:
-                temp = {
-                    "doc_id": fav.f_id.f_id,
-                    "title": fav.f_id.f_title,
-                    "team_id": -1,
-                    "team_name": "",
-                    "time": fav.f_id.f_etime.strftime('%Y-%m-%d %H:%M:%S'),
-                }
-            else:
-                temp ={
-                    "doc_id": fav.f_id.f_id,
-                    "title": fav.f_id.f_title,
-                    "team_id": fav.f_id.t_id.t_id,
-                    "team_name": fav.f_id.t_id.t_name,
-                    "time": fav.f_id.f_etime.strftime('%Y-%m-%d %H:%M:%S'),  
-                }
-            res.append(temp)
+            if fav.f_id.trash_status==False:
+                if fav.f_id.t_id == None:
+                    temp = {
+                        "doc_id": fav.f_id.f_id,
+                        "title": fav.f_id.f_title,
+                        "team_id": -1,
+                        "team_name": "",
+                        "time": fav.f_id.f_etime.strftime('%Y-%m-%d %H:%M:%S'),
+                    }
+                else:
+                    temp ={
+                        "doc_id": fav.f_id.f_id,
+                        "title": fav.f_id.f_title,
+                        "team_id": fav.f_id.t_id.t_id,
+                        "team_name": fav.f_id.t_id.t_name,
+                        "time": fav.f_id.f_etime.strftime('%Y-%m-%d %H:%M:%S'),  
+                    }
+                res.append(temp)
         return JsonResponse({'success': True, 'exc': '', 'list': res})
     except Exception:
         return JsonResponse({'success': False, 'exc': '文档ID有误。'})

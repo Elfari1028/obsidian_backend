@@ -384,6 +384,7 @@ def list_all_team_docs(request):
             temp = {
                 'doc_id': file.f_id,
                 'title': file.f_title,
+                "username":file.u_id.username,
                 'team_id': file.t_id.t_id,
                 'team_name': file.t_id.t_name,
                 'time': file.f_etime.strftime('%Y-%m-%d %H:%M:%S'),

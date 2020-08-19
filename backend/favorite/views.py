@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.views.decorators.http import (require_GET, 
+from django.views.decorators.http import (require_GET,
                                           require_POST)
 from django.http import HttpResponse, JsonResponse
 from account.models import Comment, MyUser
@@ -8,25 +8,26 @@ from django.db.models import Q
 from doc.views import get_identity
 from account.models import MyUser, File, Team, Template, TeamMember, Favorites
 import simplejson
-# Create your views here.
+from datetime import datetime
+
 
 @require_POST
 def add_doc(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先注册或登录。"})
-    
+
     try:
         data = simplejson.loads(request.body)
         doc_id = data['doc_id']
     except Exception:
-        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
+        return JsonResponse({'success': False, 'exc': "请求格式错误。"})
 
     try:
-        doc = File.objects.get(f_id = doc_id)
-        fav = Favorites.objects.create(u_id = request.user, f_id=doc)
-        return JsonResponse({'success':True, 'exc':''})
+        doc = File.objects.get(f_id=doc_id)
+        fav = Favorites.objects.create(u_id=request.user, f_id=doc)
+        return JsonResponse({'success': True, 'exc': ''})
     except Exception:
-        return JsonResponse({'success':False, 'exc':'文档ID有误。'})
+        return JsonResponse({'success': False, 'exc': '文档ID有误。'})
 
 
 @require_POST
@@ -37,14 +38,14 @@ def cancel_doc(request):
         data = simplejson.loads(request.body)
         doc_id = data['doc_id']
     except Exception:
-        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
+        return JsonResponse({'success': False, 'exc': "请求格式错误。"})
     try:
-        doc = File.objects.get(f_id = doc_id)
-        fav = Favorites.objects.get(u_id = request.user, f_id=doc)
+        doc = File.objects.get(f_id=doc_id)
+        fav = Favorites.objects.get(u_id=request.user, f_id=doc)
         fav.delete()
-        return JsonResponse({'success':True, 'exc':''})
+        return JsonResponse({'success': True, 'exc': ''})
     except Exception:
-        return JsonResponse({'success':False, 'exc':'文档ID有误。'})
+        return JsonResponse({'success': False, 'exc': '文档ID有误。'})
 
 
 @require_GET
@@ -63,17 +64,17 @@ def get_all_docs(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先注册或登录。"})
     try:
-        favs = Favorites.objects.filter(u_id = request.user)
+        favs = Favorites.objects.filter(u_id=request.user)
         res = []
         for fav in favs:
             temp = {
-                "doc_id":fav.f_id.f_id,
+                "doc_id": fav.f_id.f_id,
                 "title": fav.f_id.f_title,
-                "team_id":fav.f_id.t_id.t_id,
+                "team_id": fav.f_id.t_id.t_id,
                 "team_name": fav.f_id.t_id.t_name,
-                "time" :fav.f_id.f_etime,
+                "time": fav.f_id.f_etime.strftime('%Y-%m-%d %H:%M:%S'),
             }
             res.append(temp)
-        return JsonResponse({'success':True, 'exc':'','list':res})
+        return JsonResponse({'success': True, 'exc': '', 'list': res})
     except Exception:
-        return JsonResponse({'success':False, 'exc':'文档ID有误。'})
+        return JsonResponse({'success': False, 'exc': '文档ID有误。'})

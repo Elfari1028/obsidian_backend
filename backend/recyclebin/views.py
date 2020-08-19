@@ -29,7 +29,7 @@ def get_team_deleted_file(request):
         data = simplejson.loads(request.body)
         team_id = data['team_id']
     except Exception:
-        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
+        return JsonResponse({'success': False, 'exc': "请求格式错误。"})
 
     try:
         team_member = TeamMember.objects.get(Q(t_id__t_id__exact=team_id) & Q(u_id__id__exact=request.user.id))
@@ -41,8 +41,8 @@ def get_team_deleted_file(request):
                 'title': file.f_title,
                 'team_id': file.t_id.t_id,
                 'team_name': file.t_id.t_name,
-                'time': file.f_etime,
-                'delete_time': file.f_dtime
+                'time': file.f_etime.strftime('%Y-%m-%d %H:%M:%S'),
+                'delete_time': file.f_dtime.strftime('%Y-%m-%d %H:%M:%S')
             }
             res.append(temp)
         return JsonResponse({"success": True, "exc": '', 'doc_list': res})
@@ -67,14 +67,14 @@ def get_private_deleted_file(request):
         file_list = File.objects.filter(u_id__id=request.user.id, trash_status=True)
         res = []
         for file in file_list:
-            if file.t_id != None:
+            if file.t_id is not None:
                 temp = {
                     'doc_id': file.f_id,
                     'title': file.f_title,
                     'team_id': file.t_id.t_id,
                     'team_name': file.t_id.t_name,
-                    'edit_time': file.f_etime,
-                    'delete_time': file.f_dtime
+                    'edit_time': file.f_etime.strftime('%Y-%m-%d %H:%M:%S'),
+                    'delete_time': file.f_dtime.strftime('%Y-%m-%d %H:%M:%S')
                 }
             else:
                 temp = {
@@ -82,8 +82,8 @@ def get_private_deleted_file(request):
                     'title': file.f_title,
                     'team_id': -1,
                     'team_name': "",
-                    'edit_time': file.f_etime,
-                    'delete_time': file.f_dtime
+                    'edit_time': file.f_etime.strftime('%Y-%m-%d %H:%M:%S'),
+                    'delete_time': file.f_dtime.strftime('%Y-%m-%d %H:%M:%S')
                 }
             res.append(temp)
         return JsonResponse({"success": True, "exc": '', 'list': res})
@@ -94,7 +94,7 @@ def get_private_deleted_file(request):
 
 @require_POST
 def recover_file(request):
-    '''by lighten'''
+    """by lighten"""
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先登录或注册。"})
 
@@ -103,7 +103,7 @@ def recover_file(request):
         doc_id = data['doc_id']
         team_id = data['team_id']
     except Exception:
-        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
+        return JsonResponse({'success': False, 'exc': "请求格式错误。"})
 
     try:
         file = File.objects.get(f_id=doc_id)
@@ -120,15 +120,15 @@ def recover_file(request):
 
 @require_POST
 def delete_file(request):
-    ''' by lighten'''
+    """ by lighten"""
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先登录或注册。"})
-    
+
     try:
         data = simplejson.loads(request.body)
         file_id = data['doc_id']
     except Exception:
-        return JsonResponse({'success':False, 'exc':"请求格式错误。"})
+        return JsonResponse({'success': False, 'exc': "请求格式错误。"})
 
     try:
         file = File.objects.get(f_id=file_id)
@@ -141,7 +141,7 @@ def delete_file(request):
         else:
             return JsonResponse({"success": False, 'exc': '当前用户没有删除权限。'})
     except Exception as e:
-        return JsonResponse({'success': False, 'exc':"删除文件失败。"})
+        return JsonResponse({'success': False, 'exc': "删除文件失败。"})
 
 
 def clear_all_docs(request):

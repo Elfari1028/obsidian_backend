@@ -265,7 +265,7 @@ def edit_permission(request):
     if get_identity(request.user, file) != 1:
         return JsonResponse({"success": False, "exc": "没有权限编辑当前文档权限。"})
     else:
-        if file.t_id != None:
+        if file.t_id is not None:
             set_permission(file, team_auth, 2)
         set_permission(file, other_auth, 3)
         file.save()
@@ -275,9 +275,9 @@ def edit_permission(request):
 @require_POST
 @login_required(login_url="/accounts/login1")
 def get_doc_edit_history(request):
-    '''
-    by lighten:  
-    通信方式：POST (Json)  
+    """
+    by lighten:
+    通信方式：POST (Json)
     发送包：
         - doc_id: 正整形， 表示文档id
     返回包:
@@ -289,7 +289,7 @@ def get_doc_edit_history(request):
         username: 字符串，用户名
         avatar: 字符串，头像链接
         }, {} , {} ]
-    '''
+    """
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先登录或注册。", 'history': ''})
     else:
@@ -306,7 +306,8 @@ def get_doc_edit_history(request):
             res = []
             for edit_history in edit_history_lists:
                 temp = {'username': edit_history.u_id.username, 'user_id': edit_history.u_id.id,
-                        'avatar': edit_history.u_id.u_avatar.url, 'time': edit_history.edit_time}
+                        'avatar': edit_history.u_id.u_avatar.url,
+                        'time': edit_history.edit_time.strftime('%Y-%m-%d %H:%M:%S')}
                 res.append(temp)
             return res
 
@@ -320,13 +321,13 @@ def get_doc_edit_history(request):
 
 @require_POST
 def delete_team_file(request):
-    '''
+    """
     发送：
     -doc_id：整型，要删除的文件id
     收到:
     -success：布尔值，表示是否成功
     -exc：字符串，表示错误信息，成功则为空
-    '''
+    """
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "please login or register"})
 
@@ -385,8 +386,8 @@ def list_all_team_docs(request):
                 'title': file.f_title,
                 'team_id': file.t_id.t_id,
                 'team_name': file.t_id.t_name,
-                'time': file.f_etime,
-                'create_time': file.f_ctime,
+                'time': file.f_etime.strftime('%Y-%m-%d %H:%M:%S'),
+                'create_time': file.f_ctime.strftime('%Y-%m-%d %H:%M:%S'),
             }
             res.append(temp)
         return JsonResponse({"success": True, "exc": '', 'list': res})

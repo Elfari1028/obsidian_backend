@@ -1,45 +1,49 @@
 from django.shortcuts import render
-from django.views.decorators.http import (require_GET, 
+from django.views.decorators.http import (require_GET,
                                           require_POST)
 from django.http import HttpResponse, JsonResponse
 from account.models import Comment, MyUser, File
 from message.views import add_message
 import simplejson
 from django.contrib.auth.decorators import login_required
+from datetime import datetime
+
 import time
+
+
 # Create your views here.
 
 @require_POST
 def get_comments(request):
-    '''by lighten'''
+    """by lighten"""
     if not request.user.is_authenticated:
-        return JsonResponse({"success":False, "exc":"请先登录或注册。"})
+        return JsonResponse({"success": False, "exc": "请先登录或注册。"})
     data = simplejson.loads(request.body)
     file_id = data['doc_id']
-    comments = Comment.objects.filter(f_id__f_id = file_id).order_by('-create_time')
+    comments = Comment.objects.filter(f_id__f_id=file_id).order_by('-create_time')
     res = []
     for comment in comments:
         res_main = {
             "com_id": comment.c_id,
-            'username': comment.u_id.username, 
-            'user_id':  comment.u_id.id, 
+            'username': comment.u_id.username,
+            'user_id': comment.u_id.id,
             'avatar': comment.u_id.u_avatar.url,
-            'content':comment.content,
-            'create_time': comment.create_time
+            'content': comment.content,
+            'create_time': comment.create_time.strftime('%Y-%m-%d %H:%M:%S')
         }
-        if comment.pc_id != None:
-            reply_comment = Comment.objects.get(c_id=comment.pc_id)
+        if comment.pc_id is not None:
+            reply_comment_data = Comment.objects.get(c_id=comment.pc_id)
             res_reply = {
-                "com_id": reply_comment.c_id,
-                'username': reply_comment.u_id.username, 
-                'user_id':  reply_comment.u_id.id, 
-                'avatar': reply_comment.u_id.u_avatar.url,
-                'content':reply_comment.content,
-                'create_time': reply_comment.create_time
+                "com_id": reply_comment_data.c_id,
+                'username': reply_comment_data.u_id.username,
+                'user_id': reply_comment_data.u_id.id,
+                'avatar': reply_comment_data.u_id.u_avatar.url,
+                'content': reply_comment_data.content,
+                'create_time': reply_comment_data.create_time.strftime('%Y-%m-%d %H:%M:%S')
             }
         else:
-            res_reply=None
-        temp = {"comment":res_main, "reply":res_reply}
+            res_reply = None
+        temp = {"comment": res_main, "reply": res_reply}
         res.append(temp)
 
     return JsonResponse({
@@ -47,6 +51,7 @@ def get_comments(request):
         'exc': '',
         'comments': res
     })
+
 
 @require_POST
 @login_required(login_url="/accounts/login1")
@@ -61,7 +66,7 @@ def reply_comment(request):
         - post_time： 发布时间
     '''
     if not request.user.is_authenticated:
-        return JsonResponse({'success':False, 'exc':'请先登录或注册。', 'post_time':''})
+        return JsonResponse({'success': False, 'exc': '请先登录或注册。', 'post_time': ''})
 
     try:
         data = simplejson.loads(request.body)
@@ -70,27 +75,28 @@ def reply_comment(request):
         content = data['content']
         file_id = data['doc_id']
         reply_to = data['reply_to']
-        file = File.objects.get(f_id = file_id)
+        file = File.objects.get(f_id=file_id)
     except Exception:
-        return JsonResponse({"success":False, 'exc':"请求格式错误。"})
+        return JsonResponse({"success": False, 'exc': "请求格式错误。"})
     # 回复他人的回复
-    if reply_to != None:
+    if reply_to is not None:
         try:
             parent_comment = Comment.objects.get(c_id=reply_to)
         except Exception:
-            return JsonResponse({'success':False, 'exc':'回复的评论不存在。'})
+            return JsonResponse({'success': False, 'exc': '回复的评论不存在。'})
 
         # 将评论加入数据库
-        comment = Comment.objects.create(u_id = request.user, f_id = file, pc_id = reply_to, content = content)
+        comment = Comment.objects.create(u_id=request.user, f_id=file, pc_id=reply_to, content=content)
         if request.user != file.u_id:
-            add_message(sender=request.user, receiver=file.u_id, m=1 ,team=None)
+            add_message(sender=request.user, receiver=file.u_id, m=1, team=None)
 
-        return JsonResponse({'success':True, 'exc':'', 'post_time':comment.create_time})
-    
+        return JsonResponse({'success': True, 'exc': '', 'post_time': comment.create_.strftime('%Y-%m-%d %H:%M:%S')})
+
     # 对文档的回复
     else:
         # 将评论加入数据库
-        comment = Comment.objects.create(u_id = request.user, f_id = file, content = content)
+        comment = Comment.objects.create(u_id=request.user, f_id=file, content=content)
         if request.user != file.u_id:
-            add_message(sender=request.user, receiver=file.u_id, m=1 ,team=None)
-        return JsonResponse({'success':True, 'exc':'', 'post_time':comment.create_time})
+            add_message(sender=request.user, receiver=file.u_id, m=1, team=None)
+        return JsonResponse(
+            {'success': True, 'exc': '', 'post_time': comment.create_time.strftime('%Y-%m-%d %H:%M:%S')})

@@ -19,6 +19,7 @@ from django.views.static import serve
 from . import settings
 
 urlpatterns = [
+    path('api/',include([
     path('admin/', admin.site.urls),
     path('account/', include('account.urls')),
     path('doc/', include('doc.urls')),
@@ -26,6 +27,6 @@ urlpatterns = [
     path('comment/', include('comment.urls')),
     path('bin/', include('recyclebin.urls')),
     path('favorite/', include('favorite.urls')),
-    path('message/', include('message.urls')),
+    path('message/', include('message.urls')])),
     re_path('media/(?P<path>.*)$',  serve, {"document_root": settings.MEDIA_ROOT}),
 ]

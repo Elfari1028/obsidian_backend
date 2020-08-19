@@ -59,7 +59,7 @@ def get_all_messages(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先登录或注册。"})
 
-    msgs = Message.objects.filter(receiver=request.user)
+    msgs = Message.objects.filter(receiver=request.user).order_by("-is_read")
     res = []
     unread_num = 0
     for msg in msgs:
@@ -76,7 +76,8 @@ def get_all_messages(request):
             'is_read': msg.is_read,
         }
         res.append(temp)
-    return JsonResponse({'success': True, 'exc': "", "unread_num": unread_num, "list": res})
+    tot_num = max(unread_num,15)
+    return JsonResponse({'success': True, 'exc': "", "unread_num": unread_num, "list": res[:tot_num]})
 
 
 @require_POST

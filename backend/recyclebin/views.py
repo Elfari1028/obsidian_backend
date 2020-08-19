@@ -64,27 +64,15 @@ def get_private_deleted_file(request):
         return JsonResponse({"success": False, "exc": "please login or register"})
 
     try:
-        file_list = File.objects.filter(u_id__id=request.user.id, trash_status=True)
+        file_list = File.objects.filter(u_id__id=request.user.id, trash_status=True, t_id=None)
         res = []
         for file in file_list:
-            if file.t_id is not None:
-                temp = {
-                    'doc_id': file.f_id,
-                    'title': file.f_title,
-                    'team_id': file.t_id.t_id,
-                    'team_name': file.t_id.t_name,
-                    'edit_time': file.f_etime.strftime('%Y-%m-%d %H:%M:%S'),
-                    'delete_time': file.f_dtime.strftime('%Y-%m-%d %H:%M:%S')
-                }
-            else:
-                temp = {
-                    'doc_id': file.f_id,
-                    'title': file.f_title,
-                    'team_id': -1,
-                    'team_name': "",
-                    'edit_time': file.f_etime.strftime('%Y-%m-%d %H:%M:%S'),
-                    'delete_time': file.f_dtime.strftime('%Y-%m-%d %H:%M:%S')
-                }
+            temp = {
+                'doc_id': file.f_id,
+                'title': file.f_title,
+                'edit_time': file.f_etime.strftime('%Y-%m-%d %H:%M:%S'),
+                'delete_time': file.f_dtime.strftime('%Y-%m-%d %H:%M:%S')
+            }
             res.append(temp)
         return JsonResponse({"success": True, "exc": '', 'list': res})
     except Exception as e:

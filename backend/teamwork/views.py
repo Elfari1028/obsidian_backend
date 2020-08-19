@@ -356,6 +356,10 @@ def rename_team(request):
         team = Team.objects.get(t_id=data['team_id'])
     except Team.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '团队不存在'})
-    team.t_name = data['team_name']
-    team.save()
-    return JsonResponse({'success': True, 'exc': ''})
+    try:
+        exist = Team.objects.get(t_name=data['team_name'])
+        return JsonResponse({'success': False, 'exc': '队伍名已被占用'})
+    except Team.DoesNotExist:
+        team.t_name = data['team_name']
+        team.save()
+        return JsonResponse({'success': True, 'exc': ''})

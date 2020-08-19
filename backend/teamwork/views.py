@@ -80,7 +80,7 @@ def invite_members(request):
 
         try:
             myuser = MyUser.objects.get(username=data['user_name'])
-            userid=myuser.id
+            userid = myuser.id
             try:
                 # 如果已经是成员，就不能被邀请了
                 exist = TeamMember.objects.get(u_id=userid, t_id=data['team_id'], status=2)
@@ -295,3 +295,45 @@ def list_applications(request):
             }
             returnlist.append(tmp)
     return JsonResponse({'user_list': returnlist, 'success': True, 'exc': ''})
+
+
+def edit_team_intro(request):
+    # 更改团队简介
+    # POST(json)
+    # 发送：
+    # -team_id：整型，表示团队id
+    # -team_info： 字符串，表示团队简介
+    #
+    # 接收：
+    # -success：布尔值，表示是否成功
+    # -exc：字符串，表示错误信息，成功则为空
+    data = simplejson.loads(request.body)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
+    if not isleader(request):
+        return JsonResponse({'success': False, 'exc': '您无权编辑团队简介'})
+    try:
+        team = Team.objects.get(t_id=data['team_id'])
+    except Team.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': '团队不存在'})
+    team.intro = data['team_info']
+    team.save()
+    return JsonResponse({'success': True, 'exc': ''})
+
+
+def get_team_intro(request):
+    # 获取团队简介
+    # POST(json)
+    # 发送：
+    # -team_id：整型，表示团队id
+    # 接收：
+    # -team_info： 字符串，表示团队简介
+    # -success：布尔值，表示是否成功
+    # -exc：字符串，表示错误信息，成功则为空
+    data = simplejson.loads(request.body)
+    try:
+        team = Team.objects.get(t_id=data['team_id'])
+    except Team.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': '团队不存在'})
+    team_info = team.intro
+    return JsonResponse({'team_info': team_info, 'success': True, 'exc': ''})

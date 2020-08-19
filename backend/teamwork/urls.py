@@ -10,7 +10,8 @@ urlpatterns = [
     path('members_in_team/', views.members_in_team),
     path('remove_member/', views.remove_member),
     path('list_applications/', views.list_applications),
-
+    path('edit_team_intro/', views.edit_team_intro),
+    path('get_team_intro/', views.get_team_intro),
 
     # just for debug
     path('isleader/', views.isleader),

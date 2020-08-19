@@ -79,7 +79,7 @@ def reply_comment(request):
     except Exception:
         return JsonResponse({"success": False, 'exc': "请求格式错误。"})
     # 回复他人的回复
-    if reply_to not None:
+    if reply_to != None:
         try:
             parent_comment = Comment.objects.get(c_id=reply_to)
         except Exception:

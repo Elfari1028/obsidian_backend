@@ -53,6 +53,9 @@ class Team(models.Model):
     # 团队创建时间
     create_time = models.DateTimeField(auto_now_add=True)
 
+    # 团队简介
+    intro = models.CharField(null=True, blank=True, max_length=256)
+
 
 class File(models.Model):
     # 文件ID

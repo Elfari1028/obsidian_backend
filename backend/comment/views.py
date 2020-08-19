@@ -90,7 +90,7 @@ def reply_comment(request):
         if request.user != file.u_id:
             add_message(sender=request.user, receiver=file.u_id, m=1, team=None, doc=file)
 
-        return JsonResponse({'success': True, 'exc': '', 'post_time': comment.create_.strftime('%Y-%m-%d %H:%M:%S')})
+        return JsonResponse({'success': True, 'exc': '', 'post_time': comment.create_time.strftime('%Y-%m-%d %H:%M:%S')})
 
     # 对文档的回复
     else:

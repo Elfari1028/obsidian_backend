@@ -166,7 +166,7 @@ class TeamMember(models.Model):
 
 class Message(models.Model):
     # 消息ID
-    m_id=models.AutoField(primary_key=True)
+    m_id = models.AutoField(primary_key=True)
 
     # 发送用户
     sender = models.ForeignKey(MyUser, on_delete=models.DO_NOTHING, related_name="msg_sender")
@@ -175,16 +175,17 @@ class Message(models.Model):
     receiver = models.ForeignKey(MyUser, on_delete=models.DO_NOTHING, related_name="msg_receiver")
 
     # 内容
-    content=models.CharField(max_length=256)
+    content = models.CharField(max_length=256)
 
-    #type
+    # type
     m_type = models.CharField(max_length=256, default=None)
 
     # 发布时间
-    create_time=models.DateTimeField(auto_now_add=True)
+    create_time = models.DateTimeField(auto_now_add=True)
 
     # 是否已读，已读为1，否则为0
     is_read = models.BooleanField(default=False)
+
 
 class BrowseRecords(models.Model):
     # 历史记录ID

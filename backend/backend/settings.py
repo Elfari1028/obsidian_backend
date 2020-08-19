@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 from django.urls import reverse
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,7 +25,7 @@ SECRET_KEY = 'i5-1_gmxrg53_r13qwst-d)^&0$+8g3d5+**o2!crm%nb%)#f0'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','front.cabin.com', "39.97.183.73"]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'front.cabin.com', "39.97.183.73"]
 
 # 解决CORS问题
 CORS_ORIGIN_WHITELIST = (
@@ -124,9 +125,6 @@ DATABASES = {
         # 'HOST': '127.0.0.1',
         # 'PORT': '3306',
 
-
-
-
     },
     'OPTIONS': {
         'charset': 'utf8mb4',
@@ -181,10 +179,9 @@ MEDIA_URL = '/media/'
 
 CKEDITOR_UPLOAD_PATH = 'content/file/'
 
-
 AUTHENTICATION_BACKENDS = (  # 实现使用邮箱登录
     'django.contrib.auth.backends.ModelBackend',
     'account.views.CustomBackend',
 )
 
-APPEND_SLASH=False
+APPEND_SLASH = False

@@ -400,13 +400,15 @@ def get_recent_read(request):
     if not request.user.is_authenticated:
         return JsonResponse({"success": False, "exc": "请先登录", "list": []})
     returnList = []
-    records = BrowseRecords.objects.filter(u_id__id__exact=request.user.id).values('f_id').distinct()
+    records = BrowseRecords.objects.filter(Q(u_id__id__exact=request.user.id)
+                                           & Q(trash_status__exact=False)).values('f_id').distinct()
     now = datetime.now()
     for record in records:
         file = File.objects.get(f_id__exact=record['f_id'])
         if (now - file.f_etime).days > 7:  # 浏览记录只保存7天
             record.delete()
-        temp = {"doc_id": file.f_id, "title": file.f_title, "team_id": -1 if file.t_id is None else file.t_id.t_id,
+        temp = {"doc_id": file.f_id, "title": file.f_title, "creator": file.u_id.username,
+                "team_id": -1 if file.t_id is None else file.t_id.t_id,
                 "team_name": "" if file.t_id is None else file.t_id.t_name,
                 "time": file.f_etime.strftime('%Y-%m-%d %H:%M:%S')}
         returnList.append(temp)

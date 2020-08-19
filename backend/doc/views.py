@@ -401,7 +401,7 @@ def get_recent_read(request):
         return JsonResponse({"success": False, "exc": "请先登录", "list": []})
     returnList = []
     records = BrowseRecords.objects.filter(Q(u_id__id__exact=request.user.id)
-                                           & Q(trash_status__exact=False)).values('f_id').distinct()
+                                           & Q(f_id__trash_status__exact=False)).values('f_id').distinct()
     now = datetime.now()
     for record in records:
         file = File.objects.get(f_id__exact=record['f_id'])

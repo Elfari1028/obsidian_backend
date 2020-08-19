@@ -50,7 +50,7 @@ def generate_permission_dic(instance, identity):
     res = {"read": True if instance.is_read >= identity else False,
            "edit": True if instance.is_editor >= identity else False,
            'comment': True if instance.is_comment >= identity else False,
-        #    'share': True if instance.is_share >= identity else False
+           #    'share': True if instance.is_share >= identity else False
            }
     return res
 
@@ -96,7 +96,7 @@ def upload_image(request):
     try:
         doc_id = request.POST['doc_id']
     except Exception:
-        return JsonResponse({'success': False, 'exc': "请求格式错误。"})
+        return JsonResponse({'success': False, 'exc': "请求格式错误。", "path": ""})
     # doc_id = request.POST.get('doc_id')
     try:
         file = File.objects.get(f_id__exact=doc_id)
@@ -191,7 +191,7 @@ def list_all_my_docs(request):
         else:
             temp['team_id'] = -1
             temp['team_name'] = ""
-        temp['time'] = doc.f_etime
+        temp['time'] = doc.f_etime.strftime('%Y-%m-%d %H:%M:%S')
         returnList.append(temp)
     return JsonResponse({"success": True, "exc": "", "listnum": len(result), "list": returnList})
 
@@ -402,7 +402,8 @@ def get_recent_read(request):
         if (now - file.f_etime).days > 7:  # 浏览记录只保存7天
             record.delete()
         temp = {"doc_id": file.f_id, "title": file.f_title, "team_id": -1 if file.t_id is None else file.t_id.t_id,
-                "team_name": "" if file.t_id is None else file.t_id.t_name, "time": file.f_etime}
+                "team_name": "" if file.t_id is None else file.t_id.t_name,
+                "time": file.f_etime.strftime('%Y-%m-%d %H:%M:%S')}
         returnList.append(temp)
     return JsonResponse({"success": True, "exc": "", "list": returnList})
 

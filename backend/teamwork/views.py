@@ -90,7 +90,7 @@ def invite_members(request):
                 try:
                     # 之前邀请过
                     exist = TeamMember.objects.get(u_id=userid, t_id=data['team_id'])
-                    exist.inviter.id = data['inviter_id']
+                    exist.inviter_id = data['inviter_id']
                     exist.save()
                     return JsonResponse({'success': True, 'exc': ''})
                 except TeamMember.DoesNotExist:

@@ -88,7 +88,7 @@ def reply_comment(request):
         # 将评论加入数据库
         comment = Comment.objects.create(u_id=request.user, f_id=file, pc_id=reply_to, content=content)
         if request.user != file.u_id:
-            add_message(sender=request.user, receiver=file.u_id, m=1, team=None)
+            add_message(sender=request.user, receiver=file.u_id, m=1, team=None, doc=file)
 
         return JsonResponse({'success': True, 'exc': '', 'post_time': comment.create_.strftime('%Y-%m-%d %H:%M:%S')})
 
@@ -97,6 +97,6 @@ def reply_comment(request):
         # 将评论加入数据库
         comment = Comment.objects.create(u_id=request.user, f_id=file, content=content)
         if request.user != file.u_id:
-            add_message(sender=request.user, receiver=file.u_id, m=1, team=None)
+            add_message(sender=request.user, receiver=file.u_id, m=1, team=None, doc=file)
         return JsonResponse(
             {'success': True, 'exc': '', 'post_time': comment.create_time.strftime('%Y-%m-%d %H:%M:%S')})

@@ -10,35 +10,35 @@ import simplejson
 # Create your views here.
 
 
-def add_message(sender=None, receiver=None, m=0, team=None):
+def add_message(sender=None, receiver=None, m=0, team=None, doc=None):
     '''by Lighten
     '''
     # 文档被评论-
     if m == 1:
         content = sender.username + "对您的文档进行了评论，快去看看吧！ " + "www.baidu.com"
-        Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="评论")
+        Message.objects.create(sender=sender, receiver=receiver, content=content, m_title="评论", m_type=m, f_id=doc.f_id)
     # 团队邀请-
     elif m == 2:
         content = sender.username + "邀请您加入" + team.t_name + "快去看看吧！ "
-        Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="团队邀请")
+        Message.objects.create(sender=sender, receiver=receiver, content=content, m_title="团队邀请", m_type=m, t_id=team.t_id)
     # 被允许加入团队
     elif m == 3:
         content = "您已加入团队" + team.t_name + "，快去看看吧！ "
-        Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="允许加入团队")
+        Message.objects.create(sender=sender, receiver=receiver, content=content, m_title="允许加入团队", m_type=m, t_id=team.t_id)
     # 被拒绝加入团队
     elif m == 4:
         content = "您被拒绝加入团队" + team.t_name + "。 "
-        Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="拒绝加入团队")
+        Message.objects.create(sender=sender, receiver=receiver, content=content, m_title="拒绝加入团队", m_type=m, t_id=team.t_id)
     # 踢出团队-
     elif m == 5:
         content = sender.username + "您被踢出了团队" + team.t_name + "，快去看看吧！ "
-        Message.objects.create(sender=sender, receiver=receiver, content=content, m_type="踢出团队")
+        Message.objects.create(sender=sender, receiver=receiver, content=content, m_title="踢出团队", m_type=m, t_id=team.t_id)
     # 解散团队-
     elif m == 6:
         content = "您所属的团队" + team.t_name + "已被" + sender.username + "解散，快去看看吧！ "
         team_members = TeamMember.objects.filter(t_id=team.t_id)
         for tm in team_members:
-            Message.objects.create(sender=sender, receiver=tm.u_id, content=content, m_type="解散团队")
+            Message.objects.create(sender=sender, receiver=tm.u_id, content=content, m_title="解散团队", m_type=m, t_id=team.t_id)
     else:
         Exception("error, m code is wrong")
 
@@ -69,6 +69,8 @@ def get_all_messages(request):
             "message_id": msg.m_id,
             'sender':msg.sender.id,
             "type": msg.m_type,
+            'doc_id':msg.f_id,
+            'team_id':msg.t_id,
             'content': msg.content,
             'create_time': msg.create_time.strftime('%Y-%m-%d %H:%M:%S'),
             'is_read': msg.is_read,

@@ -180,8 +180,17 @@ class Message(models.Model):
     # 内容
     content = models.CharField(max_length=256)
 
+    # title
+    m_title = models.CharField(max_length=256, default=None)
+
     # type
-    m_type = models.CharField(max_length=256, default=None)
+    m_type = models.IntegerField(default=0)
+
+    # file_id
+    f_id = models.IntegerField(default=0)
+
+    # team_id
+    t_id = models.IntegerField(default=0)
 
     # 发布时间
     create_time = models.DateTimeField(auto_now_add=True)

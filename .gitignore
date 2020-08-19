@@ -1,0 +1,7 @@
+#二进制文件
+backend/**/__pycache__/
+*.pyc
+
+# backend/**/migrations/**
+# !backend**/migrations
+# !backend**/migrations/__init__.py

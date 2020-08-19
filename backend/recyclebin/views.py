@@ -160,7 +160,7 @@ def clear_all_docs(request):
         myuser = MyUser.objects.get(id=userid)
     except MyUser.DoesNotExist:
         return JsonResponse({'success': False, 'exc': '用户不存在'})
-    qs = File.objects.filter(Q(u_id=userid) & Q(t_id=None) & Q(trash_status=False))
+    qs = File.objects.filter(Q(u_id=userid) & Q(t_id=None) & Q(trash_status=True))
     lst = list(qs.values('f_id'))
     if lst is not None:
         for record in lst:

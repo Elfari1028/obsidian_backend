@@ -337,3 +337,25 @@ def get_team_intro(request):
         return JsonResponse({'success': False, 'exc': '团队不存在'})
     team_info = team.intro
     return JsonResponse({'team_info': team_info, 'success': True, 'exc': ''})
+
+
+def rename_team(request):
+    # POST(json)
+    # 发送：
+    # -team_id：整型，表示团队id
+    # -team_name： 字符串，表示已更改的团队名称
+    # 接收：
+    # -success：布尔值，表示是否成功
+    # -exc：字符串，表示错误信息，成功则为空
+    data = simplejson.loads(request.body)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'exc': '请先登录再执行操作'})
+    if not isleader(request):
+        return JsonResponse({'success': False, 'exc': '您无权修改团队名称'})
+    try:
+        team = Team.objects.get(t_id=data['team_id'])
+    except Team.DoesNotExist:
+        return JsonResponse({'success': False, 'exc': '团队不存在'})
+    team.t_name = data['team_name']
+    team.save()
+    return JsonResponse({'success': True, 'exc': ''})

@@ -12,6 +12,7 @@ urlpatterns = [
     path('list_applications/', views.list_applications),
     path('edit_team_intro/', views.edit_team_intro),
     path('get_team_intro/', views.get_team_intro),
+    path('rename_team/',views.rename_team),
 
     # just for debug
     path('isleader/', views.isleader),

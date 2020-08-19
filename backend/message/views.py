@@ -31,7 +31,7 @@ def add_message(sender=None, receiver=None, m=0, team=None, doc=None):
         Message.objects.create(sender=sender, receiver=receiver, content=content, m_title="拒绝加入团队", m_type=m, t_id=team.t_id)
     # 踢出团队-
     elif m == 5:
-        content = sender.username + "您被踢出了团队" + team.t_name + "，快去看看吧！ "
+        content = "您被"+ sender.username + "踢出了团队" + team.t_name + "，快去看看吧！ "
         Message.objects.create(sender=sender, receiver=receiver, content=content, m_title="踢出团队", m_type=m, t_id=team.t_id)
     # 解散团队-
     elif m == 6:

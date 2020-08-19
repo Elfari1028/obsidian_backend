@@ -72,7 +72,7 @@ def get_all_docs(request):
                     temp = {
                         "doc_id": fav.f_id.f_id,
                         "title": fav.f_id.f_title,
-                        'username': fav.f_id.u_id.username,
+                        'creator': fav.f_id.u_id.username,
                         "team_id": -1,
                         "team_name": "",
                         "time": fav.f_id.f_etime.strftime('%Y-%m-%d %H:%M:%S'),
@@ -81,7 +81,7 @@ def get_all_docs(request):
                     temp ={
                         "doc_id": fav.f_id.f_id,
                         "title": fav.f_id.f_title,
-                        'username': fav.f_id.u_id.username,
+                        'creator': fav.f_id.u_id.username,
                         "team_id": fav.f_id.t_id.t_id,
                         "team_name": fav.f_id.t_id.t_name,
                         "time": fav.f_id.f_etime.strftime('%Y-%m-%d %H:%M:%S'),  
